@@ -23,8 +23,6 @@ library(rJava)
 library(kernlab)
 library(randomForest)
 library(maptools)
-
-
 library(SDMTools)
 library(dplyr)
 
