@@ -51,7 +51,7 @@ indexOf <- function(v,findFor) {
 
 # Name of .csv file with species occurrences, columns: 'species', 'lon', 'lat'
 ##Botar o caminho inteiro pra Ler a planilha do zero
-file = "./MNE_Teste_newScript/data/03_clean_df_thin_1_BSF.csv"
+file = "./data/03_clean_df_thin_1_BSF.csv"
 
 
 # Reading files -----------------------------------------------------------
@@ -66,13 +66,13 @@ sp.names <- as.character(unique(pres$species))
 sp.n = sp.names[[1]]
 
 #Read predictor variables (i.e. present maps cropped by mcp)
-raster_files <- list.files("./MNE_Teste_newScript/outputs/SPECIES/Pres_env_crop/", full.names = T, 'tif$|bil$')
+raster_files <- list.files("./outputs/SPECIES/Pres_env_crop/", full.names = T, 'tif$|bil$')
 head(raster_files)
 
 predictors <- stack(raster_files)
 
 # Read your future environmental rasters selected by correlation
-raster_files2 <- list.files("./MNE_Teste_newScript/Maps/Future/rcp45", full.names = T, 'tif$|bil$')
+raster_files2 <- list.files("./Maps/Future/rcp45", full.names = T, 'tif$|bil$')
 head(raster_files2)
 
 future_variable <- stack(raster_files2)
@@ -108,7 +108,7 @@ cat( format( started_time, "%a %b %d %X %Y"), '-', 'STARTED', '\n')
 cat( format( started_time, "%a %b %d %X %Y"), '-', 'Preparing train and test datasets for', sp.n, 'with ', lim, 'lines...', '\n')
 
 ##A pasta final onde tudo vai ser salvo (no loop é dentro da pasta de cada espécie_results talvez)
-target_dir = paste("./MNE_Teste_newScript/outputs/SPECIES/results", '/', sep="" )
+target_dir = paste("./outputs/SPECIES/results", '/', sep="" )
 dir.create( target_dir )
 
 if(file.exists(paste(target_dir, '/STARTED.txt', sep="")))
@@ -118,11 +118,11 @@ write(format( started_time, "%a %b %d %X %Y"), file=paste(target_dir, 'STARTED.t
 
 # For using different number of pseudoabsence in each algorithm, for example:
 ## pseudoausencia = n*10
-sp.data <- read.csv(paste("./MNE_Teste_newScript/outputs/SPECIES/pres_pseudoabs2.csv"), header=TRUE, sep=',')
+sp.data <- read.csv(paste("./outputs/SPECIES/pres_pseudoabs2.csv"), header=TRUE, sep=',')
 
 #colocar aqui embaixo  outra planilha depois de rodar pro outro modelo
 ##pseudoausencia = 100
-sp.data2 <- read.csv(paste("./MNE_Teste_newScript/outputs/SPECIES/pres_pseudoabs.csv"), header=TRUE, sep=',')
+sp.data2 <- read.csv(paste("./outputs/SPECIES/pres_pseudoabs.csv"), header=TRUE, sep=',')
 
 #sp.data3 <- read.csv(paste('./spdata/', "pres_pseudoabs_10000", '.csv', sep=""), header=TRUE, sep=',')
 

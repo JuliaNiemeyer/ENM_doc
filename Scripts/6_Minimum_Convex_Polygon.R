@@ -20,10 +20,10 @@ library(dplyr)
 
 # Creating two objects: (1) with the original projection of your data
 # and (2) with an equal area projection
-dir.create("./MNE_Teste_newScript/outputs")
+dir.create("./outputs")
 
 ## Entrar com a planilha limpa pós spthin
-sp <- read.table("./MNE_Teste_newScript/data/03_clean_df_thin_1_BSF.csv",header=TRUE, sep=",") #%>%
+sp <- read.table("./data/03_clean_df_thin_1_BSF.csv",header=TRUE, sep=",") #%>%
  # filter(species == 'Acestrorhynchus_britskii')
 
 
@@ -48,7 +48,7 @@ crs.albers <-
 # Read your table of occurrence records
 
 ##Planilha de ocorrência pós spthin aqui
-occurrence_records <- read.table("./MNE_Teste_newScript/data/03_clean_df_thin_1_BSF.csv",header=TRUE, sep=",") %>%
+occurrence_records <- read.table("./data/03_clean_df_thin_1_BSF.csv",header=TRUE, sep=",") %>%
    filter(species == 'Acestrorhynchus_britskii')
 
 # Check the column names for your coordinates and place below within c("","")
@@ -96,7 +96,7 @@ polygon_wgs <- spTransform(buffer_mpc, crs.wgs84)
 plot(polygon_wgs)
 
 # Read your environmental raster selected by correlation
-raster_files <- list.files("./MNE_Teste_newScript/Maps/Present", full.names = T, 'tif$|bil$')
+raster_files <- list.files("./Maps/Present", full.names = T, 'tif$|bil$')
 head(raster_files)
 
 envi <- stack(raster_files)
@@ -114,24 +114,24 @@ myraster2 <- mask(myraster, polygon_wgs)
 # Save your layers --------------------------------------------------------
 
 
-dir.create("./MNE_Teste_newScript/outputs/SPECIES") ##Fazer o loop aqui
+dir.create("./outputs/SPECIES") ##Fazer o loop aqui
 
 writeOGR(
   polygon_wgs,
-  dsn = "./MNE_Teste_newScript/outputs/SPECIES/", ##SPECIES deve ser o nome da especie
+  dsn = "./outputs/SPECIES/", ##SPECIES deve ser o nome da especie
   layer = "polygon_mpc_wgs",
   driver = "ESRI Shapefile",
   overwrite = T)
 ## TA DANDO ERRO PRA SALVAR
-#Error in writeOGR(polygon_wgs, dsn = "./MNE_Teste_newScript/outputs",  :
+#Error in writeOGR(polygon_wgs, dsn = "./outputs",  :
 #obj must be a SpatialPointsDataFrame, SpatialLinesDataFrame or
 #SpatialPolygonsDataFrame
 
-dir.create('./MNE_Teste_newScript/outputs/SPECIES/Pres_env_crop')
+dir.create('./outputs/SPECIES/Pres_env_crop')
 
 #writeRaster(myraster2,
- #           "./MNE_Teste_newScript/outputs/SPECIES/Pres_env_crop/env_crop", ##SPECIES deve ser o nome da especie
+ #           "./outputs/SPECIES/Pres_env_crop/env_crop", ##SPECIES deve ser o nome da especie
   #          format = "GTiff",
    #         overwrite = T)
 
-writeRaster(myraster2, filename=paste0("./MNE_Teste_newScript/outputs/SPECIES/Pres_env_crop/", names(myraster2)), bylayer=TRUE, format="GTiff")
+writeRaster(myraster2, filename=paste0("./outputs/SPECIES/Pres_env_crop/", names(myraster2)), bylayer=TRUE, format="GTiff")

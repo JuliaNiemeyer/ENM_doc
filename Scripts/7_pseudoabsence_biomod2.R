@@ -23,7 +23,7 @@ library(dplyr)
 
 # Opening occurences ------------------------------------------------------
 
-sp <- read.table("./MNE_Teste_newScript/data/03_clean_df_thin_1_BSF.csv",header=TRUE, sep=",") %>%
+sp <- read.table("./data/03_clean_df_thin_1_BSF.csv",header=TRUE, sep=",") %>%
   select(species, lon, lat) %>%
   filter(species == "Acestrorhynchus_britskii")
 
@@ -38,7 +38,7 @@ My_target_species <- sp[,2:3]
 # Reading environmental variables -----------------------------------------
 
 # Read your environmental raster selected by correlation
-raster_files <- list.files("./MNE_Teste_newScript/Maps/Present", full.names = T, 'tif$|bil$')
+raster_files <- list.files("./Maps/Present", full.names = T, 'tif$|bil$')
 head(raster_files)
 
 environment <- stack(raster_files)
@@ -117,8 +117,8 @@ get_mask <- function(bfd){
 #points(pres.xy, pch = 20, col= "red")
 
 
-write.csv(pa.all.xy,"./MNE_Teste_newScript/outputs/SPECIES/pseudoabs1.csv", row.names = F) ##no loop colocar dentro da pasta de cada espécie
-write.csv(pa.all.xy2,"./MNE_Teste_newScript/outputs/SPECIES/pseudoabs2.csv", row.names = F) ##no loop colocar dentro da pasta de cada espécie
+write.csv(pa.all.xy,"./outputs/SPECIES/pseudoabs1.csv", row.names = F) ##no loop colocar dentro da pasta de cada espécie
+write.csv(pa.all.xy2,"./outputs/SPECIES/pseudoabs2.csv", row.names = F) ##no loop colocar dentro da pasta de cada espécie
 
 
 ##esse aqui não farei
@@ -162,7 +162,7 @@ names(pres_pseudo_table2) <-c("pa","lon","lat")
 
 
 ##aqui mudar no loop para entrar dentro da pasta da espécie
-write.csv(pres_pseudo_table,"./MNE_Teste_newScript/outputs/SPECIES/pres_pseudoabs.csv", row.names = F)
-write.csv(pres_pseudo_table2,"./MNE_Teste_newScript/outputs/SPECIES/pres_pseudoabs2.csv", row.names = F)
-#pres_pseudo_table <- read.csv("./MNE_Teste_newScript/data/output/pres_pseudoabs.csv")
+write.csv(pres_pseudo_table,"./outputs/SPECIES/pres_pseudoabs.csv", row.names = F)
+write.csv(pres_pseudo_table2,"./outputs/SPECIES/pres_pseudoabs2.csv", row.names = F)
+#pres_pseudo_table <- read.csv("./data/output/pres_pseudoabs.csv")
 #head(pres_pseudo_table)
