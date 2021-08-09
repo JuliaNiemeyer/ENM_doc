@@ -48,8 +48,9 @@ crs.albers <-
 # Read your table of occurrence records
 
 ##Planilha de ocorrência pós spthin aqui
-occurrence_records <- read.table("./data/03_clean_df_thin_1_BSF.csv",header=TRUE, sep=",") #%>%
-   #filter(species == 'Acestrorhynchus_britskii')
+occurrence_records <- read.table("./data/03_clean_df_thin_1_BSF.csv",header=TRUE, sep=",") %>%
+   filter(species == 'Acestrorhynchus_britskii') %>%
+  select(species, lon, lat)
 
 # Check the column names for your coordinates and place below within c("","")
 coordinates(occurrence_records) <- c("lon", "lat")
