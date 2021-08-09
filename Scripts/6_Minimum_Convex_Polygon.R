@@ -23,9 +23,9 @@ library(dplyr)
 dir.create("./outputs")
 
 ## Entrar com a planilha limpa pós spthin
-sp <- read.table("./data/03_clean_df_thin_1_BSF.csv",header=TRUE, sep=",") #%>%
- # filter(species == 'Acestrorhynchus_britskii')
-
+sp <- read.table("./data/03_clean_df_thin_1_BSF.csv",header=TRUE, sep=",")# %>%
+ # select(species, lon, lat) %>%
+  #filter(species == "Acestrorhynchus_britskii")
 
 # WGS84
 crs.wgs84 <- CRS("+proj=longlat +ellps=WGS84 +datum=WGS84")
@@ -48,8 +48,8 @@ crs.albers <-
 # Read your table of occurrence records
 
 ##Planilha de ocorrência pós spthin aqui
-occurrence_records <- read.table("./data/03_clean_df_thin_1_BSF.csv",header=TRUE, sep=",") %>%
-   filter(species == 'Acestrorhynchus_britskii')
+occurrence_records <- read.table("./data/03_clean_df_thin_1_BSF.csv",header=TRUE, sep=",") #%>%
+   #filter(species == 'Acestrorhynchus_britskii')
 
 # Check the column names for your coordinates and place below within c("","")
 coordinates(occurrence_records) <- c("lon", "lat")
@@ -95,18 +95,31 @@ buffer_mpc <- gBuffer(mpc, width = b)
 polygon_wgs <- spTransform(buffer_mpc, crs.wgs84)
 plot(polygon_wgs)
 
-# Read your environmental raster selected by correlation
-raster_files <- list.files("./Maps/Present", full.names = T, 'tif$|bil$')
-head(raster_files)
+# Read your present AND FUTURE environmental raster selected by correlation
+pres_files <- list.files("./Maps/Present", full.names = T, 'tif$|bil$')
+head(pres_files)
 
-envi <- stack(raster_files)
+envi <- stack(pres_files)
 
 # Cut your study area for the same extention and shape of your mpc
-myraster <- crop(envi, polygon_wgs)
-myraster2 <- mask(myraster, polygon_wgs)
+present_ly <- crop(envi, polygon_wgs)
+present_ly2 <- mask(present_ly, polygon_wgs)
 
 # Plot the results
-#plot(myraster2)
+#plot(present_ly2)
+#plot(occurrence_records, add = T)
+
+fut_files <- list.files("./Maps/Future/rcp45", full.names = T, 'tif$|bil$')
+head(fut_files)
+
+envi_fut <- stack(fut_files)
+
+# Cut your study area for the same extention and shape of your mpc
+future_ly <- crop(envi_fut, polygon_wgs)
+future_ly2 <- mask(future_ly, polygon_wgs)
+
+# Plot the results
+#plot(future_ly2[[1]])
 #plot(occurrence_records, add = T)
 
 
@@ -129,9 +142,13 @@ writeOGR(
 
 dir.create('./outputs/SPECIES/Pres_env_crop')
 
-#writeRaster(myraster2,
+#writeRaster(present_ly2,
  #           "./outputs/SPECIES/Pres_env_crop/env_crop", ##SPECIES deve ser o nome da especie
   #          format = "GTiff",
    #         overwrite = T)
 
-writeRaster(myraster2, filename=paste0("./outputs/SPECIES/Pres_env_crop/", names(myraster2)), bylayer=TRUE, format="GTiff")
+writeRaster(present_ly2, filename=paste0("./outputs/SPECIES/Pres_env_crop/", names(present_ly2)), bylayer=TRUE, format="GTiff")
+
+dir.create('./outputs/SPECIES/Fut_env_crop')
+writeRaster(future_ly2, filename=paste0("./outputs/SPECIES/Fut_env_crop/", names(future_ly2)), bylayer=TRUE, format="GTiff")
+

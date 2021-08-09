@@ -38,7 +38,8 @@ My_target_species <- sp[,2:3]
 # Reading environmental variables -----------------------------------------
 
 # Read your environmental raster selected by correlation
-raster_files <- list.files("./Maps/Present", full.names = T, 'tif$|bil$')
+raster_files <- list.files('./outputs/SPECIES/Pres_env_crop', full.names = T, 'tif$|bil$')
+#raster_files <- list.files('./Maps/Present', full.names = T, 'tif$|bil$')
 head(raster_files)
 
 environment <- stack(raster_files)
@@ -134,7 +135,7 @@ pseudo_0 <- rep(0,length(pseudoabs))
 pseudoabs$species <- pseudo_0
 pseudoabs <- pseudoabs[,c(3,1,2)]
 names(pseudoabs) <-c("species","lon","lat")
-#pres_pseudo_table <- rbind(pres,pseudoabs)
+pres_pseudo_table <- rbind(pres,pseudoabs)
 #head(pres_pseudo_table)
 #tail(pres_pseudo_table)
 #dim(pres_pseudo_table)
