@@ -54,23 +54,24 @@ file = "./data/03_clean_df_thin_1_BSF.csv"
 
 # Reading files -----------------------------------------------------------
 
-pres <- read.csv(file) # %>%
-  #select(species, lon, lat) #%>%
-  #filter(species == "Acestrorhynchus_britskii")
-#pres <- as.data.frame(pres)
+pres <- read.csv(file)  %>%
+  filter(species == "Acestrorhynchus_britskii") %>%
+  select(species, lon, lat)
 
 sp.names <- as.character(unique(pres$species))
 # running for one species
 sp.n = sp.names[[1]]
 
 #Read predictor variables (i.e. present maps cropped by mcp)
+#raster_files <- list.files('./Maps/Present', full.names = T, 'tif$|bil$')
 raster_files <- list.files("./outputs/SPECIES/Pres_env_crop/", full.names = T, 'tif$|bil$')
 head(raster_files)
 
 predictors <- stack(raster_files)
 
 # Read your future environmental rasters selected by correlation
-raster_files2 <- list.files("./Maps/Future/rcp45", full.names = T, 'tif$|bil$')
+#raster_files2 <- list.files('./Maps/Future/rcp45', full.names = T, 'tif$|bil$')
+raster_files2 <- list.files('./outputs/SPECIES/Fut_env_crop', full.names = T, 'tif$|bil$')
 head(raster_files2)
 
 future_variable <- stack(raster_files2)
@@ -371,7 +372,7 @@ kappa <- c(bckappaval, gmkappaval, rfkappaval, mxkappaval, svkappaval)
 Valid <- data.frame(mod.sp, mod.names, TSS, AUC, kappa, stringsAsFactors=FALSE)
 
 ##Pasta de resultados na pasta de cada espécie
-write.csv(Valid, file = paste( target_dir, '/Valid_', sp.n, '.csv', sep=""))
+write.csv(Valid, file = paste( target_dir, 'Valid_', sp.n, '.csv', sep=""))
 
 
 
@@ -394,6 +395,7 @@ for(i in 1:k){
   if(bcTSS[[i]] >= tss.lim){
     cur.bc[[i]] <- predict(predictors, bc[[i]])
     cur.bc.bin[[i]] <- cur.bc[[i]] > bcthres[[i]]
+    ##AQUI TA DANDO 0 pra os future_variable.bc
     future_variable.bc[[i]] <- predict(future_variable, bc[[i]])
     future_variable.bc.bin[[i]] <- future_variable.bc[[i]] > bcthres[[i]]
 
@@ -418,7 +420,7 @@ tval <- median(tval)
 cur.bc.ens.bin <- cur.bc.ens >= tval
 
 
-##########
+########## AQUI TA DANDO ERRRO OF FUTURE_VARIABLE TAO DANDO VALOR 0
 future_variable.bc <- Filter(Negate(is.null), future_variable.bc)
 future_variable.bc.bin <- Filter(Negate(is.null), future_variable.bc.bin)
 
@@ -801,8 +803,8 @@ cat( format( Sys.time(), "%a %b %d %X %Y"), '-', 'Projecting ensemble models of'
 ##aqui ver de add um ifelse caso algum algoritmo tenha dado abaixo do TSS, que vai dar erro - ignorar se dar zero (NULL)
 #algo.cur <- list(cur.bc.ens.bin, cur.gm.ens.bin, cur.rf.ens.bin, cur.mx.ens.bin, cur.sv.ens.bin)
 
-list <- c(cur.gm.ens.bin, cur.rf.ens.bin, cur.mx.ens.bin, cur.sv.ens.bin)
-algo.cur <- list[is.na(list) == FALSE]
+algo.cur <- list(cur.gm.ens.bin, cur.rf.ens.bin, cur.mx.ens.bin, cur.sv.ens.bin)
+algo.cur <- algo.cur[is.na(algo.cur) == FALSE]
 #algo.cur <- list(list)
 #algo.cur <- list(cur.gm.ens.bin, cur.rf.ens.bin, cur.mx.ens.bin, cur.sv.ens.bin) ##pegar apenas os que não deram NULL (colocar no ifelse)
 algo.cur2 <- algo.cur[is.na(algo.cur) == FALSE]
@@ -822,7 +824,7 @@ w <- c(bcTSSval, gmTSSval, rfTSSval, mxTSSval, svTSSval) ##ja ignora o que for n
 #w_fut <- w[is.null(w)] ##adicionei isso pra retirar qualquer um que for NULL
 
 
-if (is.null(cur.bc == FALSE)) {
+if (is.null(cur.bc) == FALSE) {
 st1 <- stack(cur.bc)
 for(i in 1:length(cur.bc)){
   min_max <- range(cur.bc[[i]][], na.rm=T)
@@ -940,73 +942,109 @@ cur.sv.sd.w <- sqrt(cur.sv.sd.w)
 # For binary model
 
 # binarios
-list_fut <- c(future_variable.bc.ens.bin, future_variable.gm.ens.bin, future_variable.rf.ens.bin, future_variable.mx.ens.bin, future_variable.sv.ens.bin)
-algo.future_variable <- list[is.na(list) == FALSE] ##will ignore null rasters
-algo.future_variable <- algo.future_variable[is.na(algo.future_variable) == FALSE]
+algo.future_variable <- list(future_variable.bc.ens.bin, future_variable.gm.ens.bin, future_variable.rf.ens.bin, future_variable.mx.ens.bin, future_variable.sv.ens.bin)
+algo.future_variable <- algo.future_variable[is.na(algo.future_variable) == FALSE] ##will ignore null rasters
 ens.future_variable <- Reduce('+', algo.future_variable)
 tval <- unique(ens.future_variable)
 tval <- tval[tval != 0]
 tval <- median(tval)
 ens.future_variable.bin <- ens.future_variable >= tval
 
-# continuous
-if (is.null(future_variable.bc)){
-  st1 <- NULL
-}else {
-  st1 <- stack(future_variable.bc)
-  for(i in 1:length(future_variable.bc)){
-    min_max <- range(future_variable.bc[[i]][], na.rm=T)
-    #write.table(min_max, paste("future_variable.bc", i, sp.n, ".txt",  sep="_"))
-  }
-  }
-#rm(future_variable.bc)
-
-if (is.null(future_variable.gm)){
-  st2 <- NULL }else {
-    st2 <- stack(future_variable.gm)
-    for(i in 1:length(future_variable.gm)){
-      min_max <- range(future_variable.gm[[i]][], na.rm=T)
-      #write.table(min_max, paste("future_variable.gm", i, sp.n, ".txt",  sep="_"))
-    }
+st1 <- stack(future_variable.bc)
+for(i in 1:length(future_variable.bc)){
+  min_max <- range(future_variable.bc[[i]][], na.rm=T)
+  #write.table(min_max, paste("future_variable.bc", i, sp.n, ".txt",  sep="_"))
 }
+rm(future_variable.bc)
+
+# continuous com ifelse
+#if (is.null(future_variable.bc)){
+#  st1 <- NULL
+#}else {
+#  st1 <- stack(future_variable.bc)
+ # for(i in 1:length(future_variable.bc)){
+  #  min_max <- range(future_variable.bc[[i]][], na.rm=T)
+    #write.table(min_max, paste("future_variable.bc", i, sp.n, ".txt",  sep="_"))
+  #}
+  #}
+
+st2 <- stack(future_variable.gm)
+for(i in 1:length(future_variable.gm)){
+  min_max <- range(future_variable.gm[[i]][], na.rm=T)
+  #write.table(min_max, paste("future_variable.gm", i, sp.n, ".txt",  sep="_"))
+}
+
+
+#com ifelse
+#if (is.null(future_variable.gm)){
+ # st2 <- NULL }else {
+  #  st2 <- stack(future_variable.gm)
+   # for(i in 1:length(future_variable.gm)){
+    #  min_max <- range(future_variable.gm[[i]][], na.rm=T)
+      #write.table(min_max, paste("future_variable.gm", i, sp.n, ".txt",  sep="_"))
+    #}
+#}
 #rm(future_variable.gm)
 
-if (is.null(future_variable.rf)){
-  st3 <- NULL
-}else {
-  st3 <- stack(future_variable.rf)
-  for(i in 1:length(future_variable.rf)){
-    min_max <- range(future_variable.rf[[i]][], na.rm=T)
-    #write.table(min_max, paste("future_variable.rf", i, sp.n, ".txt",  sep="_"))
-  }
+st3 <- stack(future_variable.rf)
+for(i in 1:length(future_variable.rf)){
+  min_max <- range(future_variable.rf[[i]][], na.rm=T)
+  #write.table(min_max, paste("future_variable.rf", i, sp.n, ".txt",  sep="_"))
 }
+
+#com ifelse
+
+#if (is.null(future_variable.rf)){
+ # st3 <- NULL
+#}else {
+ # st3 <- stack(future_variable.rf)
+#  for(i in 1:length(future_variable.rf)){
+ #   min_max <- range(future_variable.rf[[i]][], na.rm=T)
+    #write.table(min_max, paste("future_variable.rf", i, sp.n, ".txt",  sep="_"))
+#  }
+#}
 #rm(future_variable.rf)
 
-if (is.null(future_variable.mx)){
-  st4 <- NULL
-}else {
-  st4 <- stack(future_variable.mx)
-  for(i in 1:length(future_variable.mx)){
-    min_max <- range(future_variable.mx[[i]][], na.rm=T)
-    #write.table(min_max, paste("future_variable.mx", i, sp.n, ".txt",  sep="_"))
-  }
+st4 <- stack(future_variable.mx)
+for(i in 1:length(future_variable.mx)){
+  min_max <- range(future_variable.mx[[i]][], na.rm=T)
+  #write.table(min_max, paste("future_variable.mx", i, sp.n, ".txt",  sep="_"))
 }
+
+#com ifelse
+#if (is.null(future_variable.mx)){
+ # st4 <- NULL
+#}else {
+ # st4 <- stack(future_variable.mx)
+  #for(i in 1:length(future_variable.mx)){
+   # min_max <- range(future_variable.mx[[i]][], na.rm=T)
+    #write.table(min_max, paste("future_variable.mx", i, sp.n, ".txt",  sep="_"))
+ # }
+#}
 #rm(future_variable.mx)
 
-if (is.na(future_variable.sv)){
-  st5 <- NULL
-} else {
-  st5 <- stack(future_variable.sv)
-  for(i in 1:length(future_variable.sv)){
-    min_max <- range(future_variable.sv[[i]][], na.rm=T)
-    #write.table(min_max, paste("future_variable.sv", i, sp.n, ".txt",  sep="_"))
-  }
+
+
+st5 <- stack(future_variable.sv)
+for(i in 1:length(future_variable.sv)){
+  min_max <- range(future_variable.sv[[i]][], na.rm=T)
+  #write.table(min_max, paste("future_variable.sv", i, sp.n, ".txt",  sep="_"))
 }
+
+
+#com ifelse
+#if (is.na(future_variable.sv)){
+ # st5 <- NULL
+#} else {
+ # st5 <- stack(future_variable.sv)
+#  for(i in 1:length(future_variable.sv)){
+ #   min_max <- range(future_variable.sv[[i]][], na.rm=T)
+    #write.table(min_max, paste("future_variable.sv", i, sp.n, ".txt",  sep="_"))
+  #}
+#}
 #rm(future_variable.sv)
 
-stacks_fut <- c(st1, st2, st3, st4, st5) ## ignora o que for null
-st_fut <- stack(stacks_fut)
-
+st_fut <- stack(st1, st2, st3, st4, st5)
 w.sem.os.nulos <- w[w >= tss.lim]
 ens2.future_variable <- weighted.mean(st_fut, w.sem.os.nulos)
 ens.fut.cont <- ens2.future_variable
