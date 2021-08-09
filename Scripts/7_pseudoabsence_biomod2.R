@@ -23,9 +23,16 @@ library(dplyr)
 
 # Opening occurences ------------------------------------------------------
 
+## Entrar com a planilha limpa pós spthin
+sp <- read.table("./data/03_clean_df_thin_1_BSF.csv",header=TRUE, sep=",")
+sp_names <- unique(sp$species)
+
+#for (a in 1:length(sp_names)) {
+
+# message("starting the analysis for ", paste0(sp_names[a]))
 sp <- read.table("./data/03_clean_df_thin_1_BSF.csv",header=TRUE, sep=",") %>%
-  select(species, lon, lat) %>%
-  filter(species == "Acestrorhynchus_britskii")
+  filter(species == paste0(sp_names[a])) %>%
+  select(species, lon, lat)
 
 #nsp <- unique(sp$species)
 #species <- "Acestrorhynchus_britskii"
@@ -38,7 +45,7 @@ My_target_species <- sp[,2:3]
 # Reading environmental variables -----------------------------------------
 
 # Read your environmental raster selected by correlation
-raster_files <- list.files('./outputs/SPECIES/Pres_env_crop', full.names = T, 'tif$|bil$')
+raster_files <- list.files(paste0("./outputs/", sp_names[a], "/Pres_env_crop/"), full.names = T, 'tif$|bil$')
 #raster_files <- list.files('./Maps/Present', full.names = T, 'tif$|bil$')
 head(raster_files)
 
@@ -118,8 +125,8 @@ get_mask <- function(bfd){
 #points(pres.xy, pch = 20, col= "red")
 
 
-write.csv(pa.all.xy,"./outputs/SPECIES/pseudoabs1.csv", row.names = F) ##no loop colocar dentro da pasta de cada espécie
-write.csv(pa.all.xy2,"./outputs/SPECIES/pseudoabs2.csv", row.names = F) ##no loop colocar dentro da pasta de cada espécie
+write.csv(pa.all.xy, paste0("./outputs/",sp_names[a], "/pseudoabs1.csv"), row.names = F) ##no loop colocar dentro da pasta de cada espécie
+write.csv(pa.all.xy2, paste0("./outputs/",sp_names[a], "/pseudoabs2.csv"), row.names = F) ##no loop colocar dentro da pasta de cada espécie
 
 
 ##esse aqui não farei
@@ -129,7 +136,7 @@ pseudoabs <- pa.all.xy
 
 pres = sp
 # Replace using your species name in "Genus_epithet" ##aqui ajeitar para loop
-pres$`species` <- sub(pattern = "Acestrorhynchus_britskii", replacement = "1", x = pres$`species`)
+pres$`species` <- sub(pattern = paste0(sp_names[a]), replacement = "1", x = pres$`species`)
 #tail(pres)
 pseudo_0 <- rep(0,length(pseudoabs))
 pseudoabs$species <- pseudo_0
@@ -149,7 +156,7 @@ pseudoabs2 <- pa.all.xy2
 
 pres = sp
 # Replace using your species name in "Genus_epithet" ##aqui ajeitar para loop
-pres$`species` <- sub(pattern = "Acestrorhynchus_britskii", replacement = "1", x = pres$`species`)
+pres$`species` <- sub(pattern = paste0(sp_names[a]), replacement = "1", x = pres$`species`)
 #tail(pres)
 pseudo_0 <- rep(0,length(pseudoabs2))
 pseudoabs2$species <- pseudo_0
@@ -163,7 +170,21 @@ names(pres_pseudo_table2) <-c("pa","lon","lat")
 
 
 ##aqui mudar no loop para entrar dentro da pasta da espécie
-write.csv(pres_pseudo_table,"./outputs/SPECIES/pres_pseudoabs.csv", row.names = F)
-write.csv(pres_pseudo_table2,"./outputs/SPECIES/pres_pseudoabs2.csv", row.names = F)
+write.csv(pres_pseudo_table,paste0("./outputs/", sp_names[a],"/pres_pseudoabs.csv"), row.names = F)
+write.csv(pres_pseudo_table2,paste0("./outputs/", sp_names[a],"/pres_pseudoabs2.csv"), row.names = F)
 #pres_pseudo_table <- read.csv("./data/output/pres_pseudoabs.csv")
 #head(pres_pseudo_table)
+
+#}
+
+
+############# Retirar
+# Check pseudo abs points to see if they fall inside area
+#coordinates(pres_pseudo_table2) <- c("lon", "lat")
+# Define the original projection of your occurrence records
+#proj4string(pres_pseudo_table2) <- crs.wgs84
+
+#abs <- SpatialPoints(pres_pseudo_table2, crs.wgs84)
+#plot(present_ly2[[1]])
+#plot(occurrence_records, add = T)
+#plot(abs, add = T)
