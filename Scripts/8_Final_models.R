@@ -53,25 +53,31 @@ file = "./data/03_clean_df_thin_1_BSF.csv"
 
 
 # Reading files -----------------------------------------------------------
+## Entrar com a planilha limpa pós spthin
+sp <- read.table("./data/03_clean_df_thin_1_BSF.csv",header=TRUE, sep=",")
+sp_names <- unique(sp$species)
+
+#for (a in 1:length(sp_names)) {
+
+# message("starting the analysis for ", paste0(sp_names[a]))
 
 pres <- read.csv(file)  %>%
-  filter(species == "Acestrorhynchus_britskii") %>%
+  filter(species == paste0(sp_names[a])) %>%
   select(species, lon, lat)
 
-sp.names <- as.character(unique(pres$species))
 # running for one species
-sp.n = sp.names[[1]]
+sp.n = sp_names[[a]]
 
 #Read predictor variables (i.e. present maps cropped by mcp)
 #raster_files <- list.files('./Maps/Present', full.names = T, 'tif$|bil$')
-raster_files <- list.files("./outputs/SPECIES/Pres_env_crop/", full.names = T, 'tif$|bil$')
+raster_files <- list.files(paste0("./outputs/", sp_names[a], "/Pres_env_crop/"), full.names = T, 'tif$|bil$')
 head(raster_files)
 
 predictors <- stack(raster_files)
 
 # Read your future environmental rasters selected by correlation
 #raster_files2 <- list.files('./Maps/Future/rcp45', full.names = T, 'tif$|bil$')
-raster_files2 <- list.files('./outputs/SPECIES/Fut_env_crop', full.names = T, 'tif$|bil$')
+raster_files2 <- list.files(paste0("./outputs/", sp_names[a], "/Fut_env_crop/"), full.names = T, 'tif$|bil$')
 head(raster_files2)
 
 future_variable <- stack(raster_files2)
@@ -107,7 +113,7 @@ cat( format( started_time, "%a %b %d %X %Y"), '-', 'STARTED', '\n')
 cat( format( started_time, "%a %b %d %X %Y"), '-', 'Preparing train and test datasets for', sp.n, 'with ', lim, 'lines...', '\n')
 
 ##A pasta final onde tudo vai ser salvo (no loop é dentro da pasta de cada espécie_results talvez)
-target_dir = paste("./outputs/SPECIES/results", '/', sep="" )
+target_dir = paste(paste0("./outputs/", sp_names[a], "/results/", sep=""))
 dir.create( target_dir )
 
 if(file.exists(paste(target_dir, '/STARTED.txt', sep="")))
@@ -117,11 +123,11 @@ write(format( started_time, "%a %b %d %X %Y"), file=paste(target_dir, 'STARTED.t
 
 # For using different number of pseudoabsence in each algorithm, for example:
 ## pseudoausencia = n*10
-sp.data <- read.csv(paste("./outputs/SPECIES/pres_pseudoabs2.csv"), header=TRUE, sep=',')
+sp.data <- read.csv(paste0("./outputs/", sp_names[a],"/pres_pseudoabs2.csv"), header=TRUE, sep=',')
 
 #colocar aqui embaixo  outra planilha depois de rodar pro outro modelo
 ##pseudoausencia = 100
-sp.data2 <- read.csv(paste("./outputs/SPECIES/pres_pseudoabs.csv"), header=TRUE, sep=',')
+sp.data2 <- read.csv(paste0("./outputs/", sp_names[a],"/pres_pseudoabs.csv"), header=TRUE, sep=',')
 
 #sp.data3 <- read.csv(paste('./spdata/', "pres_pseudoabs_10000", '.csv', sep=""), header=TRUE, sep=',')
 
@@ -1132,4 +1138,4 @@ save.image("./outputs/my_analysis.rData")
 
 finished_time = Sys.time()
 cat( format( finished_time, "%a %b %d %X %Y"), '-', 'FINISHED', '\n')
-write(format( finished_time, "%a %b %d %X %Y"), file=paste('./outputs/', '/FINISHED.txt', sep=""))
+write(format( finished_time, "%a %b %d %X %Y"), file=pasteo(paste0("./outputs/", sp_names[a], "/FINISHED.txt"), sep=""))
