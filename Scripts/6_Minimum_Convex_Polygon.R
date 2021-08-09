@@ -24,8 +24,17 @@ dir.create("./outputs")
 
 ## Entrar com a planilha limpa pós spthin
 sp <- read.table("./data/03_clean_df_thin_1_BSF.csv",header=TRUE, sep=",")# %>%
- # select(species, lon, lat) %>%
-  #filter(species == "Acestrorhynchus_britskii")
+# select(species, lon, lat) %>%
+#filter(species == "Acestrorhynchus_britskii")
+sp_names <- unique(sp$species)
+# running for one species
+sp.n = sp_names[[2]]
+
+#Começa o for pras sps
+
+#for (a in 1:length(sp_names)) {
+
+ # message("starting the analysis for ", paste0(sp_names[a]))
 
 # WGS84
 crs.wgs84 <- CRS("+proj=longlat +ellps=WGS84 +datum=WGS84")
@@ -49,7 +58,7 @@ crs.albers <-
 
 ##Planilha de ocorrência pós spthin aqui
 occurrence_records <- read.table("./data/03_clean_df_thin_1_BSF.csv",header=TRUE, sep=",") %>%
-   filter(species == 'Acestrorhynchus_britskii') %>%
+   filter(species == paste0(sp_names[a])) %>%
   select(species, lon, lat)
 
 # Check the column names for your coordinates and place below within c("","")
@@ -107,7 +116,7 @@ present_ly <- crop(envi, polygon_wgs)
 present_ly2 <- mask(present_ly, polygon_wgs)
 
 # Plot the results
-#plot(present_ly2)
+#plot(present_ly2[[1]])
 #plot(occurrence_records, add = T)
 
 fut_files <- list.files("./Maps/Future/rcp45", full.names = T, 'tif$|bil$')
@@ -128,11 +137,13 @@ future_ly2 <- mask(future_ly, polygon_wgs)
 # Save your layers --------------------------------------------------------
 
 
-dir.create("./outputs/SPECIES") ##Fazer o loop aqui
+dir.create(paste0("./outputs/", sp_names[a])) ##Fazer o loop aqui
+
+
 
 writeOGR(
   polygon_wgs,
-  dsn = "./outputs/SPECIES/", ##SPECIES deve ser o nome da especie
+  dsn = paste0("./outputs/", sp_names[a]), ##SPECIES deve ser o nome da especie
   layer = "polygon_mpc_wgs",
   driver = "ESRI Shapefile",
   overwrite = T)
@@ -141,15 +152,16 @@ writeOGR(
 #obj must be a SpatialPointsDataFrame, SpatialLinesDataFrame or
 #SpatialPolygonsDataFrame
 
-dir.create('./outputs/SPECIES/Pres_env_crop')
+dir.create(paste0("./outputs/", sp_names[a], "/Pres_env_crop/"))
 
 #writeRaster(present_ly2,
  #           "./outputs/SPECIES/Pres_env_crop/env_crop", ##SPECIES deve ser o nome da especie
   #          format = "GTiff",
    #         overwrite = T)
 
-writeRaster(present_ly2, filename=paste0("./outputs/SPECIES/Pres_env_crop/", names(present_ly2)), bylayer=TRUE, format="GTiff")
+writeRaster(present_ly2, filename=paste0("./outputs/", sp_names[a], "/Pres_env_crop/", names(present_ly2)), bylayer=TRUE, format="GTiff")
 
-dir.create('./outputs/SPECIES/Fut_env_crop')
-writeRaster(future_ly2, filename=paste0("./outputs/SPECIES/Fut_env_crop/", names(future_ly2)), bylayer=TRUE, format="GTiff")
+dir.create(paste0("./outputs/",sp_names[a], "/Fut_env_crop/"))
+writeRaster(future_ly2, filename=paste0("./outputs/", sp_names[a], "/Fut_env_crop/", names(future_ly2)), bylayer=TRUE, format="GTiff")
 
+#}
