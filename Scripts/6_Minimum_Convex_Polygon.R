@@ -28,7 +28,7 @@ sp <- read.table("./data/03_clean_df_thin_1_BSF.csv",header=TRUE, sep=",")# %>%
 #filter(species == "Acestrorhynchus_britskii")
 sp_names <- unique(sp$species)
 # running for one species
-sp.n = sp_names[[2]]
+#sp.n = sp_names[[2]]
 
 #Começa o for pras sps
 

@@ -180,11 +180,11 @@ write.csv(pres_pseudo_table2,paste0("./outputs/", sp_names[a],"/pres_pseudoabs2.
 
 ############# Retirar
 # Check pseudo abs points to see if they fall inside area
-#coordinates(pres_pseudo_table2) <- c("lon", "lat")
+#coordinates(pseudoabs2) <- c("lon", "lat")
 # Define the original projection of your occurrence records
-#proj4string(pres_pseudo_table2) <- crs.wgs84
+#proj4string(pseudoabs2) <- crs.wgs84
 
-#abs <- SpatialPoints(pres_pseudo_table2, crs.wgs84)
+#abs <- SpatialPoints(pseudoabs2, crs.wgs84)
 #plot(present_ly2[[1]])
-#plot(occurrence_records, add = T)
 #plot(abs, add = T)
+#
