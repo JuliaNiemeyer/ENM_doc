@@ -27,8 +27,7 @@ library(dplyr)
 sp <- read.table("./data/03_clean_df_thin_1_BSF.csv",header=TRUE, sep=",")
 sp_names <- unique(sp$species)
 
-#for (a in 1:length(sp_names)) {
-
+for (a in 1:length(sp_names)){
 # message("starting the analysis for ", paste0(sp_names[a]))
 sp <- read.table("./data/03_clean_df_thin_1_BSF.csv",header=TRUE, sep=",") %>%
   filter(species == paste0(sp_names[a])) %>%
@@ -175,7 +174,7 @@ write.csv(pres_pseudo_table2,paste0("./outputs/", sp_names[a],"/pres_pseudoabs2.
 #pres_pseudo_table <- read.csv("./data/output/pres_pseudoabs.csv")
 #head(pres_pseudo_table)
 
-#}
+}
 
 
 ############# Retirar

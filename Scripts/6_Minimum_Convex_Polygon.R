@@ -32,10 +32,6 @@ sp_names <- unique(sp$species)
 
 #Começa o for pras sps
 
-#for (a in 1:length(sp_names)) {
-
- # message("starting the analysis for ", paste0(sp_names[a]))
-
 # WGS84
 crs.wgs84 <- CRS("+proj=longlat +ellps=WGS84 +datum=WGS84")
 
@@ -43,6 +39,23 @@ crs.wgs84 <- CRS("+proj=longlat +ellps=WGS84 +datum=WGS84")
 crs.albers <-
   CRS("+proj=aea +lat_1=-5 +lat_2=-42 +lat_0=-32 +lon_0=-60
                   +x_0=0 +y_0=0 +ellps=aust_SA +units=m +no_defs")
+
+# Read your present AND FUTURE environmental raster selected by correlation
+pres_files <- list.files("./Maps/Present", full.names = T, 'tif$|bil$')
+head(pres_files)
+
+envi <- stack(pres_files)
+
+fut_files <- list.files("./Maps/Future/rcp45", full.names = T, 'tif$|bil$')
+head(fut_files)
+
+envi_fut <- stack(fut_files)
+
+
+for (a in 1:length(sp_names)){
+#
+  message("starting the analysis for ", paste0(sp_names[a]))
+
 
 # Lambert Azimuthal Equal Area (ideal for Pacific Ocean islands)
 #crs.azim <-
@@ -105,12 +118,6 @@ buffer_mpc <- gBuffer(mpc, width = b)
 polygon_wgs <- spTransform(buffer_mpc, crs.wgs84)
 plot(polygon_wgs)
 
-# Read your present AND FUTURE environmental raster selected by correlation
-pres_files <- list.files("./Maps/Present", full.names = T, 'tif$|bil$')
-head(pres_files)
-
-envi <- stack(pres_files)
-
 # Cut your study area for the same extention and shape of your mpc
 present_ly <- crop(envi, polygon_wgs)
 present_ly2 <- mask(present_ly, polygon_wgs)
@@ -119,10 +126,6 @@ present_ly2 <- mask(present_ly, polygon_wgs)
 #plot(present_ly2[[1]])
 #plot(occurrence_records, add = T)
 
-fut_files <- list.files("./Maps/Future/rcp45", full.names = T, 'tif$|bil$')
-head(fut_files)
-
-envi_fut <- stack(fut_files)
 
 # Cut your study area for the same extention and shape of your mpc
 future_ly <- crop(envi_fut, polygon_wgs)
@@ -139,14 +142,12 @@ future_ly2 <- mask(future_ly, polygon_wgs)
 
 dir.create(paste0("./outputs/", sp_names[a])) ##Fazer o loop aqui
 
-
-
-writeOGR(
-  polygon_wgs,
-  dsn = paste0("./outputs/", sp_names[a]), ##SPECIES deve ser o nome da especie
-  layer = "polygon_mpc_wgs",
-  driver = "ESRI Shapefile",
-  overwrite = T)
+#writeOGR(
+ # polygon_wgs,
+  #dsn = paste0("./outputs/", sp_names[a]), ##SPECIES deve ser o nome da especie
+  #layer = "polygon_mpc_wgs",
+  #driver = "ESRI Shapefile",
+  #overwrite = T)
 ## TA DANDO ERRO PRA SALVAR
 #Error in writeOGR(polygon_wgs, dsn = "./outputs",  :
 #obj must be a SpatialPointsDataFrame, SpatialLinesDataFrame or
@@ -164,4 +165,4 @@ writeRaster(present_ly2, filename=paste0("./outputs/", sp_names[a], "/Pres_env_c
 dir.create(paste0("./outputs/",sp_names[a], "/Fut_env_crop/"))
 writeRaster(future_ly2, filename=paste0("./outputs/", sp_names[a], "/Fut_env_crop/", names(future_ly2)), bylayer=TRUE, format="GTiff")
 
-#}
+}
