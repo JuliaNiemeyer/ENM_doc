@@ -925,7 +925,9 @@ cur.bc.sd.w <- sqrt(cur.bc.sd.w) }
 wgm <- c(gmTSSval)
 wgm.sem.os.nulos <- wgm[wgm >= tss.lim]
 if(length(wgm.sem.os.nulos)==0){
-  print('glm is null') } else {
+  print('glm is null')
+  cur.gm.sd.w <- NULL
+  } else {
 cur.gm.mean.w <- weighted.mean(st2, wgm.sem.os.nulos)
 cur.gm.sd.w <- sum(wgm.sem.os.nulos * (st2 - cur.gm.mean.w)^2)
 cur.gm.sd.w <- sqrt(cur.gm.sd.w)
@@ -1101,36 +1103,56 @@ ens.fut.bin <- ens.fut >= tval
 
 ###PRECISA MUDAR O NOME DAS VRIAVEIS
 cat( format( Sys.time(), "%a %b %d %X %Y"), '-', 'Saving ensemble maps of', sp.n, '...', '\n')
+if(!is.null(ens2.cur)){
 writeRaster(ens2.cur, file = paste(target_dir, '/CUR.cont_', sp.n, '.asc', sep=""),overwrite=TRUE)
-writeRaster(ens2.future_variable, file = paste(target_dir, '/MPI8570.cont_', sp.n, '.asc', sep=""),overwrite=TRUE)
-
+writeRaster(ens2.future_variable, file = paste(target_dir, '/Fut.HGemES.cont_', sp.n, '.asc', sep=""),overwrite=TRUE)
+}
+if(!is.null(ens.cur.bin)){
 writeRaster(ens.cur.bin, file = paste(target_dir, '/CUR.bin_', sp.n, '.asc', sep=""),overwrite=TRUE)
-writeRaster(ens.future_variable.bin, file = paste(target_dir, '/MPI8570.bin_', sp.n, '.asc', sep=""),overwrite=TRUE)
-
+writeRaster(ens.future_variable.bin, file = paste(target_dir, '/Fut.HGemES.bin_', sp.n, '.asc', sep=""),overwrite=TRUE)
+}
 #weighted.mean and weighted.sd
+if(!is.null(ens2.cur.sd.w)){
 writeRaster(ens2.cur.sd.w, file = paste(target_dir, '/ens.cur.sd.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
-writeRaster(ens2.fut.sd.w, file = paste(target_dir, '/ens.mpi8570.sd.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
+writeRaster(ens2.fut.sd.w, file = paste(target_dir, '/ens.Fut.HGemES.sd.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
+}
 #writeRaster(cur.bc.mean.w, file = paste(target_dir, '/cur.bc.mean.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
 #writeRaster(cur.bc.sd.w, file = paste(target_dir, '/cur.bc.sd.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
 #writeRaster(cur.gm.mean.w, file = paste(target_dir, '/cur.gm.mean.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
+if(!is.null(cur.gm.sd.w)){
 writeRaster(cur.gm.sd.w, file = paste(target_dir, '/cur.gm.sd.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
-#writeRaster(cur.rf.mean.w, file = paste(target_dir, '/cur.rf.mean.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
+}
+  #writeRaster(cur.rf.mean.w, file = paste(target_dir, '/cur.rf.mean.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
+if(!is.null(cur.rf.sd.w)){
 writeRaster(cur.rf.sd.w, file = paste(target_dir, '/cur.rf.sd.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
-#writeRaster(cur.mx.mean.w, file = paste(target_dir, '/cur.mx.mean.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
+}
+  #writeRaster(cur.mx.mean.w, file = paste(target_dir, '/cur.mx.mean.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
+if(!is.null(cur.mx.sd.w)){
 writeRaster(cur.mx.sd.w, file = paste(target_dir, '/cur.mx.sd.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
-#writeRaster(cur.sv.mean.w, file = paste(target_dir, '/cur.sv.mean.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
+}
+  #writeRaster(cur.sv.mean.w, file = paste(target_dir, '/cur.sv.mean.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
+if(!is.null(cur.sv.sd.w)){
 writeRaster(cur.sv.sd.w, file = paste(target_dir, '/cur.sv.sd.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
-#writeRaster(future_variable.bc.mean.w, file = paste(target_dir, '/mpi8570.bc.mean.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
+}
+  #writeRaster(future_variable.bc.mean.w, file = paste(target_dir, '/mpi8570.bc.mean.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
 #writeRaster(future_variable.bc.sd.w, file = paste(target_dir, '/mpi8570.bc.sd.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
 #writeRaster(future_variable.gm.mean.w, file = paste(target_dir, '/mpi8570.gm.mean.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
-writeRaster(future_variable.gm.sd.w, file = paste(target_dir, '/mpi8570.gm.sd.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
-#writeRaster(future_variable.rf.mean.w, file = paste(target_dir, '/mpi8570.rf.mean.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
-writeRaster(future_variable.rf.sd.w, file = paste(target_dir, '/mpi8570.rf.sd.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
-#writeRaster(future_variable.mx.mean.w, file = paste(target_dir, '/mpi8570.mx.mean.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
-writeRaster(future_variable.mx.sd.w, file = paste(target_dir, '/mpi8570.mx.sd.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
-#writeRaster(future_variable.sv.mean.w, file = paste(target_dir, '/mpi8570.sv.mean.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
-writeRaster(future_variable.sv.sd.w, file = paste(target_dir, '/mpi8570.sv.sd.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
+if(!is.null(future_variable.gm.sd.w)){
+writeRaster(future_variable.gm.sd.w, file = paste(target_dir, '/Fut.HGemES.gm.sd.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
+}
+  #writeRaster(future_variable.rf.mean.w, file = paste(target_dir, '/mpi8570.rf.mean.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
 
+if(!is.null(future_variable.rf.sd.w)){
+writeRaster(future_variable.rf.sd.w, file = paste(target_dir, '/Fut.HGemES.rf.sd.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
+}
+  #writeRaster(future_variable.mx.mean.w, file = paste(target_dir, '/mpi8570.mx.mean.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
+if(!is.null(future_variable.mx.sd.w)){
+writeRaster(future_variable.mx.sd.w, file = paste(target_dir, '/Fut.HGemES.mx.sd.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
+}
+  #writeRaster(future_variable.sv.mean.w, file = paste(target_dir, '/mpi8570.sv.mean.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
+if(!is.null(future_variable.sv.sd.w)){
+writeRaster(future_variable.sv.sd.w, file = paste(target_dir, '/Fut.HGemES.sv.sd.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
+}
 
 
 cat( format( Sys.time(), "%a %b %d %X %Y"), '-', 'Finished train and test datasets for', sp.n, 'with ', lim, 'lines...', '\n')
