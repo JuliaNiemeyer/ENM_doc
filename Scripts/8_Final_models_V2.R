@@ -50,7 +50,7 @@ indexOf <- function(v,findFor) {
 file = "./data/03_clean_df_thin_1_BSF.csv"
 
 # for GLM, RandomForest and SVM
-model <- pa ~bio_1+bio_12+bio_5+bio_6
+model <- pa ~bio_4+bio_5+bio_15+bio_18
 # partitions (4 = 75% train e 25% test; 5 = 80% train e 20% test; 10 = 90% train e 10% test)
 k = 10
 # number of background
@@ -58,7 +58,7 @@ bg.pt = 10000
 # threshold ('spec_sens' = max. spec + sens)
 t.met = 'spec_sens'
 # Minimum TSS value for ensemble
-tss.lim = 0.7
+tss.lim = 0.6
 
 cont.maps = T # save continuous maps by algorithm
 bin.maps = T # save binary maps by algorithm
@@ -71,31 +71,40 @@ ens.maps = T # save ensemble maps by algorithm
 #Usar apenas esse de baixo para a análise real
 #pres <- read.csv(file)
 
-#usar esse aqui para selecionar as espécies para teste
-pres <- read.csv(file)  %>%
-  filter(species == "Acestrorhynchus_britskii") %>%
+# Reading files -----------------------------------------------------------
+## Entrar com a planilha limpa pós spthin
+sp <- read.table("./data/03_clean_df_thin_1.csv",header=TRUE, sep=",")
+sp_names <- unique(sp$species)
+
+
+#for (a in 1:length(sp_names)) {
+sp.n = sp_names[[a]]
+
+presences <- read.csv(file)  %>%
+  filter(species == paste0(sp.n)) %>%
   select(species, lon, lat)
 
-
-sp.names <- as.character(unique(pres$species))
 # running for one species
-sp.n = sp.names[[1]]
+sp.names <- as.character(unique(presences$species))
 
 
 #Read predictor variables (i.e. present maps cropped by mcp)
 #raster_files <- list.files('./Maps/Present', full.names = T, 'tif$|bil$')
-raster_files <- list.files("./outputs/SPECIES/Pres_env_crop/", full.names = T, 'tif$|bil$')
+raster_files <- list.files(paste0("./outputs/", sp.n, "/Pres_env_crop/"), full.names = T, 'tif$|bil$')
 head(raster_files)
 
 predictors <- stack(raster_files)
 
 # Read your future environmental rasters selected by correlation
 #raster_files2 <- list.files('./Maps/Future/rcp45', full.names = T, 'tif$|bil$')
-raster_files2 <- list.files('./outputs/SPECIES/Fut_env_crop', full.names = T, 'tif$|bil$')
+raster_files2 <- list.files(paste0("./outputs/", sp.n, "/Fut_env_crop/"), full.names = T, 'tif$|bil$')
 head(raster_files2)
 
 future_variable <- stack(raster_files2)
+future_variable[[3]] <- future_variable[[3]]/10 ##divide Temperature values by 10 [https://worldclim.org/data/v1.4/formats.html]
+future_variable[[4]] <- future_variable[[4]]/10
 #names(future_variable)
+
 
 # ENM ---------------------------------------------------------------------
 
@@ -110,7 +119,7 @@ started_time = Sys.time()
 cat( format( started_time, "%a %b %d %X %Y"), '-', 'STARTED', '\n')
 cat( format( started_time, "%a %b %d %X %Y"), '-', 'Preparing train and test datasets for', sp.n, 'with ', lim, 'lines...', '\n')
 
-target_dir = paste("./outputs/SPECIES/results", '/', sep="" )
+target_dir = paste(paste0("./outputs/", sp.n, "/results/", sep=""))
 dir.create( target_dir )
 
 if(file.exists(paste(target_dir, '/STARTED.txt', sep="")))
@@ -118,8 +127,13 @@ if(file.exists(paste(target_dir, '/STARTED.txt', sep="")))
 
 write(format( started_time, "%a %b %d %X %Y"), file=paste(target_dir, '/STARTED.txt', sep=""))
 
-# Pseudoabsence from 7_pseudoans_biomod2.R
-sp.data <- read.csv(paste("./outputs/SPECIES/pres_pseudoabs.csv"), header=TRUE, sep=',')
+# For using different number of pseudoabsence in each algorithm, for example:
+## pseudoausencia = n*10
+sp.data <- read.csv(paste0("./outputs/", sp.n,"/pres_pseudoabs2.csv"), header=TRUE, sep=',')
+
+#colocar aqui embaixo  outra planilha depois de rodar pro outro modelo
+##pseudoausencia = 100
+sp.data2 <- read.csv(paste0("./outputs/", sp.n,"/pres_pseudoabs.csv"), header=TRUE, sep=',')
 
 
 # For bioclim and Maxent:
@@ -942,4 +956,4 @@ save.image("./outputs/my_analysis.rData")
 
 finished_time = Sys.time()
 cat( format( finished_time, "%a %b %d %X %Y"), '-', 'FINISHED', '\n')
-write(format( finished_time, "%a %b %d %X %Y"), file=paste('./outputs/', '/FINISHED.txt', sep=""))
+write(format( finished_time, "%a %b %d %X %Y"), file = paste0(target_dir, "FINISHED.txt", sep=""))

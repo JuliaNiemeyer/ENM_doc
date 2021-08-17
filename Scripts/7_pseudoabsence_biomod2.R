@@ -24,12 +24,14 @@ library(dplyr)
 # Opening occurences ------------------------------------------------------
 
 ## Entrar com a planilha limpa pós spthin
-sp <- read.table("./data/03_clean_df_thin_1_BSF.csv",header=TRUE, sep=",")
+sp <- read.table("./data/03_clean_df_thin_1.csv",header=TRUE, sep=",")
 sp_names <- unique(sp$species)
 
+
+#length(sp_names) <- 6
 for (a in 1:length(sp_names)){
 # message("starting the analysis for ", paste0(sp_names[a]))
-sp <- read.table("./data/03_clean_df_thin_1_BSF.csv",header=TRUE, sep=",") %>%
+sp <- read.table("./data/03_clean_df_thin_1.csv",header=TRUE, sep=",") %>%
   filter(species == paste0(sp_names[a])) %>%
   select(species, lon, lat)
 
@@ -50,7 +52,7 @@ head(raster_files)
 
 environment <- stack(raster_files)
 
-#names(environment) <- c("Bio1","Bio5")
+#names(environment) <- c("Bio15","Bio18","Bio4","Bio5") ##nome das biovariáveis na ordem
 
 occurrence.resp <- rep(1, length(My_target_species$lon))
 
@@ -184,6 +186,6 @@ write.csv(pres_pseudo_table2,paste0("./outputs/", sp_names[a],"/pres_pseudoabs2.
 #proj4string(pseudoabs2) <- crs.wgs84
 
 #abs <- SpatialPoints(pseudoabs2, crs.wgs84)
-#plot(present_ly2[[1]])
-#plot(abs, add = T)
+#plot(environment[[1]])
+#plot(pseudoabs2, add = T)
 #

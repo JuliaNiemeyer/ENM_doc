@@ -23,9 +23,9 @@ library(dplyr)
 dir.create("./outputs")
 
 ## Entrar com a planilha limpa pós spthin
-sp <- read.table("./data/03_clean_df_thin_1_BSF.csv",header=TRUE, sep=",")# %>%
-# select(species, lon, lat) %>%
-#filter(species == "Acestrorhynchus_britskii")
+sp <- read.table("./data/03_clean_df_thin_1.csv",header=TRUE, sep=",") #%>%
+ #select(species, lon, lat) %>%
+#filter(species == "Hoplerythrinus_unitaeniatus")
 sp_names <- unique(sp$species)
 # running for one species
 #sp.n = sp_names[[2]]
@@ -41,16 +41,24 @@ crs.albers <-
                   +x_0=0 +y_0=0 +ellps=aust_SA +units=m +no_defs")
 
 # Read your present AND FUTURE environmental raster selected by correlation
-pres_files <- list.files("./Maps/Present", full.names = T, 'tif$|bil$')
+pres_files <- list.files("./Maps/Present/10m", full.names = T, 'tif$|bil$')
 head(pres_files)
 
 envi <- stack(pres_files)
+# All America
+envi.cut <- crop(envi, c(-160, -28, -60, 90))
+plot(envi.cut[[1]])
 
-fut_files <- list.files("./Maps/Future/rcp45", full.names = T, 'tif$|bil$')
+fut_files <- list.files("./Maps/Future/he45bi50_10min", full.names = T, 'tif$|bil$')
 head(fut_files)
 
 envi_fut <- stack(fut_files)
+envi_fut_cut <- crop(envi_fut, c(-160, -28, -60, 90))
+#fut_envi_res <- resample(envi_fut, envi.cut, method='bilinear')
+#plot(envi_fut_cut[[1]])
 
+
+#length(sp_names) <- 6
 
 for (a in 1:length(sp_names)){
 #
@@ -70,7 +78,7 @@ for (a in 1:length(sp_names)){
 # Read your table of occurrence records
 
 ##Planilha de ocorrência pós spthin aqui
-occurrence_records <- read.table("./data/03_clean_df_thin_1_BSF.csv",header=TRUE, sep=",") %>%
+occurrence_records <- sp %>%
    filter(species == paste0(sp_names[a])) %>%
   select(species, lon, lat)
 
@@ -119,7 +127,7 @@ polygon_wgs <- spTransform(buffer_mpc, crs.wgs84)
 plot(polygon_wgs)
 
 # Cut your study area for the same extention and shape of your mpc
-present_ly <- crop(envi, polygon_wgs)
+present_ly <- crop(envi.cut, polygon_wgs)
 present_ly2 <- mask(present_ly, polygon_wgs)
 
 # Plot the results
@@ -128,11 +136,12 @@ present_ly2 <- mask(present_ly, polygon_wgs)
 
 
 # Cut your study area for the same extention and shape of your mpc
-future_ly <- crop(envi_fut, polygon_wgs)
+future_ly <- crop(envi_fut_cut, polygon_wgs)
 future_ly2 <- mask(future_ly, polygon_wgs)
+#future_ly2[[3]] <- future_ly2[[3]]/10 #Bio4 tem que ser dividida por 10 ou por 100?
 
 # Plot the results
-#plot(future_ly2[[1]])
+#plot(future_ly2[[3]])
 #plot(occurrence_records, add = T)
 
 
@@ -166,3 +175,7 @@ dir.create(paste0("./outputs/",sp_names[a], "/Fut_env_crop/"))
 writeRaster(future_ly2, filename=paste0("./outputs/", sp_names[a], "/Fut_env_crop/", names(future_ly2)), bylayer=TRUE, format="GTiff")
 
 }
+rm(future_ly)
+rm(future_ly2)
+rm(present_ly)
+rm(present_ly2)

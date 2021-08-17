@@ -47,48 +47,10 @@ indexOf <- function(v,findFor) {
 
 # Settings ----------------------------------------------------------------
 
-# Name of .csv file with species occurrences, columns: 'species', 'lon', 'lat'
-##Botar o caminho inteiro pra Ler a planilha do zero
-file = "./data/03_clean_df_thin_1_BSF.csv"
-
-
-# Reading files -----------------------------------------------------------
-## Entrar com a planilha limpa pós spthin
-sp <- read.table("./data/03_clean_df_thin_1_BSF.csv",header=TRUE, sep=",")
-sp_names <- unique(sp$species)
-
-#for (a in 1:length(sp_names)) {
-
-# message("starting the analysis for ", paste0(sp_names[a]))
-
-presences <- read.csv(file)  %>%
-  filter(species == paste0(sp_names[a])) %>%
-  select(species, lon, lat)
-a=10
-# running for one species
-sp.n = sp_names[[a]]
-sp.names <- as.character(unique(presences$species))
-
-#Read predictor variables (i.e. present maps cropped by mcp)
-#raster_files <- list.files('./Maps/Present', full.names = T, 'tif$|bil$')
-raster_files <- list.files(paste0("./outputs/", sp_names[a], "/Pres_env_crop/"), full.names = T, 'tif$|bil$')
-head(raster_files)
-
-predictors <- stack(raster_files)
-
-# Read your future environmental rasters selected by correlation
-#raster_files2 <- list.files('./Maps/Future/rcp45', full.names = T, 'tif$|bil$')
-raster_files2 <- list.files(paste0("./outputs/", sp_names[a], "/Fut_env_crop/"), full.names = T, 'tif$|bil$')
-head(raster_files2)
-
-future_variable <- stack(raster_files2)
-future_variable <- future_variable/10 ##divide por 10 pq Worldclim é maluco
-#names(future_variable)
-
 # for GLM, RandomForest and SVM
-model <- pa ~bio_1+bio_12+bio_5+bio_6
-  # partitions (4 = 75% train e 25% test; 5 = 80% train e 20% test; 10 = 90% train e 10% test)
-  k = 10
+model <- pa ~bio_4+bio_5+bio_15+bio_18
+# partitions (4 = 75% train e 25% test; 5 = 80% train e 20% test; 10 = 90% train e 10% test)
+k = 10
 # number of background
 bg.pt = 10000
 # threshold ('spec_sens' = max. spec + sens)
@@ -99,6 +61,48 @@ tss.lim = 0.6
 cont.maps = T # save continuous maps by algorithm
 bin.maps = T # save binary maps by algorithm
 ens.maps = T # save ensemble maps by algorithm
+
+
+# Name of .csv file with species occurrences, columns: 'species', 'lon', 'lat'
+##Botar o caminho inteiro pra Ler a planilha do zero
+file = "./data/03_clean_df_thin_1.csv"
+
+
+# Reading files -----------------------------------------------------------
+## Entrar com a planilha limpa pós spthin
+sp <- read.table("./data/03_clean_df_thin_1.csv",header=TRUE, sep=",")
+sp_names <- unique(sp$species)
+
+#length(sp_names) <- 6
+
+for (a in 1:length(sp_names)) {
+sp.n = sp_names[[a]]
+# message("starting the analysis for ", paste0(sp.n))
+
+presences <- read.csv(file)  %>%
+  filter(species == paste0(sp.n)) %>%
+  select(species, lon, lat)
+
+# running for one species
+sp.names <- as.character(unique(presences$species))
+
+#Read predictor variables (i.e. present maps cropped by mcp)
+#raster_files <- list.files('./Maps/Present', full.names = T, 'tif$|bil$')
+raster_files <- list.files(paste0("./outputs/", sp.n, "/Pres_env_crop/"), full.names = T, 'tif$|bil$')
+head(raster_files)
+
+predictors <- stack(raster_files)
+
+# Read your future environmental rasters selected by correlation
+#raster_files2 <- list.files('./Maps/Future/rcp45', full.names = T, 'tif$|bil$')
+raster_files2 <- list.files(paste0("./outputs/", sp.n, "/Fut_env_crop/"), full.names = T, 'tif$|bil$')
+head(raster_files2)
+
+future_variable <- stack(raster_files2)
+future_variable[[3]] <- future_variable[[3]]/10 ##divide Temperature values by 10 [https://worldclim.org/data/v1.4/formats.html]
+future_variable[[4]] <- future_variable[[4]]/10
+#names(future_variable)
+
 
 # ENM ---------------------------------------------------------------------
 
@@ -115,7 +119,7 @@ cat( format( started_time, "%a %b %d %X %Y"), '-', 'STARTED', '\n')
 cat( format( started_time, "%a %b %d %X %Y"), '-', 'Preparing train and test datasets for', sp.n, 'with ', lim, 'lines...', '\n')
 
 ##A pasta final onde tudo vai ser salvo (no loop é dentro da pasta de cada espécie_results talvez)
-target_dir = paste(paste0("./outputs/", sp_names[a], "/results/", sep=""))
+target_dir = paste(paste0("./outputs/", sp.n, "/results/", sep=""))
 dir.create( target_dir )
 
 if(file.exists(paste(target_dir, '/STARTED.txt', sep="")))
@@ -125,11 +129,11 @@ write(format( started_time, "%a %b %d %X %Y"), file=paste(target_dir, 'STARTED.t
 
 # For using different number of pseudoabsence in each algorithm, for example:
 ## pseudoausencia = n*10
-sp.data <- read.csv(paste0("./outputs/", sp_names[a],"/pres_pseudoabs2.csv"), header=TRUE, sep=',')
+sp.data <- read.csv(paste0("./outputs/", sp.n,"/pres_pseudoabs2.csv"), header=TRUE, sep=',')
 
 #colocar aqui embaixo  outra planilha depois de rodar pro outro modelo
 ##pseudoausencia = 100
-sp.data2 <- read.csv(paste0("./outputs/", sp_names[a],"/pres_pseudoabs.csv"), header=TRUE, sep=',')
+sp.data2 <- read.csv(paste0("./outputs/", sp.n,"/pres_pseudoabs.csv"), header=TRUE, sep=',')
 
 #sp.data3 <- read.csv(paste('./spdata/', "pres_pseudoabs_10000", '.csv', sep=""), header=TRUE, sep=',')
 
@@ -413,7 +417,6 @@ for(i in 1:k){
   }
 }
 
-
 ##########
 cur.bc <- Filter(Negate(is.null), cur.bc) # remove null rasters
 cur.bc.bin <- Filter(Negate(is.null), cur.bc.bin)
@@ -425,6 +428,8 @@ tval <- tval[tval != 0]
 tval <- median(tval)
 cur.bc.ens.bin <- cur.bc.ens >= tval
 
+
+##########
 future_variable.bc <- Filter(Negate(is.null), future_variable.bc)
 future_variable.bc.bin <- Filter(Negate(is.null), future_variable.bc.bin)
 
@@ -438,32 +443,33 @@ future_variable.bc.ens.bin <- future_variable.bc.ens >= tval
 
 # Taking out the zero values and normalizing rasters
 
-for(z in 1:length(cur.bc)){
-  adeq = cur.bc[[z]]
-  minimo <- min(adeq[], na.rm=T)
-  maximo <- max(adeq[], na.rm=T)
-  adeq_norm <- function(x) {(x-minimo)/(maximo-minimo)}
-  cur.bc[[z]] <- calc(adeq, adeq_norm)
+if(length(cur.bc) != 0) {
+  for(z in 1:length(cur.bc)) {
+    adeq = cur.bc[[z]]
+    minimo <- min(adeq[], na.rm=T)
+    maximo <- max(adeq[], na.rm=T)
+    adeq_norm <- function(x) {(x-minimo)/(maximo-minimo)}
+    cur.bc[[z]] <- calc(adeq, adeq_norm)
+    }
+
+  for(z in 1:length(future_variable.bc)){
+    adeq = future_variable.bc[[z]]
+    minimo <- min(adeq[], na.rm=T)
+    maximo <- max(adeq[], na.rm=T)
+    adeq_norm <- function(x) {(x-minimo)/(maximo-minimo)}
+    future_variable.bc[[z]] <- calc(adeq, adeq_norm)
+  }
+
+  #Ensemble of continuos models
+  x <- stack(cur.bc)
+  cur.bc.cont <- calc(x, fun = mean)
+
+  x <- stack(future_variable.bc)
+  future_variable.bc.cont <- calc(x, fun = mean)
+} else {
+  cur.bc.cont <- NULL
+  future_variable.bc.cont <- NULL
 }
-
-
-
-for(z in 1:length(future_variable.bc)){
-  adeq = future_variable.bc[[z]]
-  minimo <- min(adeq[], na.rm=T)
-  maximo <- max(adeq[], na.rm=T)
-  adeq_norm <- function(x) {(x-minimo)/(maximo-minimo)}
-  future_variable.bc[[z]] <- calc(adeq, adeq_norm)
-}
-
-
-#Ensemble of continuos models
-
-x <- stack(cur.bc)
-cur.bc.cont <- calc(x, fun = mean)
-
-x <- stack(future_variable.bc)
-future_variable.bc.cont <- calc(x, fun = mean)
 
 ##obs. isso aqui talve remover - ver oq faz mas talvez não precise (rodar e ver)
 #for(i in 1:k){
@@ -502,6 +508,8 @@ for(i in 1:k){
 }
 
 ##########
+
+
 cur.gm <- Filter(Negate(is.null), cur.gm)
 cur.gm.bin <- Filter(Negate(is.null), cur.gm.bin)
 
@@ -524,6 +532,7 @@ future_variable.gm.ens.bin <- future_variable.gm.ens >= tval
 
 ##########
 
+if(length(cur.gm) != 0) {
 for(z in 1:length(cur.gm)){
   adeq = cur.gm[[z]]
   minimo <- min(adeq[], na.rm=T)
@@ -548,7 +557,10 @@ cur.gm.cont <- calc(x, fun = mean)
 x <- stack(future_variable.gm)
 future_variable.gm.cont <- calc(x, fun = mean)
 
-
+} else {
+  cur.gm.cont <- NULL
+  future_variable.gm.cont <- NULL
+}
 
 
 # Projecting RF ----------------------------------------------------------
@@ -604,6 +616,7 @@ future_variable.rf.ens.bin <- future_variable.rf.ens >= tval
 
 ##########
 
+if(length(cur.rf) != 0) {
 for(z in 1:length(cur.rf)){
   adeq = cur.rf[[z]]
   if(sum(adeq[], na.rm=T)!=0){
@@ -634,7 +647,10 @@ cur.rf.cont <- calc(x, fun = mean)
 
 x <- stack(future_variable.rf)
 future_variable.rf.cont <- calc(x, fun = mean)
-
+} else {
+  future_variable.rf.cont <- NULL
+  cur.rf.cont <- NULL
+}
 
 
 # Projecting Maxent --------------------------------------------------------
@@ -690,7 +706,7 @@ future_variable.mx.ens.bin <- future_variable.mx.ens >= tval
 
 ##########
 
-
+if(length(cur.mx) != 0) {
 for(z in 1:length(cur.mx)){
   adeq = cur.mx[[z]]
   if(sum(adeq[], na.rm=T)!=0){
@@ -716,7 +732,10 @@ cur.mx.cont <- calc(x, fun = mean)
 
 x <- stack(future_variable.mx)
 future_variable.mx.cont <- calc(x, fun = mean)
-
+} else {
+  cur.mx.cont <- NULL
+  future_variable.mx.cont <- NULL
+}
 
 
 # Projecting SVM ----------------------------------------------------------
@@ -773,6 +792,8 @@ future_variable.sv.ens.bin <- future_variable.sv.ens >= tval
 
 ##########
 
+if(length(cur.sv) != 0) {
+
 for(z in 1:length(cur.sv)){
   adeq = cur.sv[[z]]
   minimo <- min(adeq[], na.rm=T)
@@ -797,6 +818,10 @@ cur.sv.cont <- calc(x, fun = mean)
 x <- stack(future_variable.sv)
 future_variable.sv.cont <- calc(x, fun = mean)
 
+} else {
+  cur.sv.cont <- NULL
+  future_variable.sv.cont <- NULL
+}
 
 
 
@@ -822,8 +847,6 @@ ens.cur.bin <- ens.cur >= tval  ##ensemble presente binario
 
 ##Mesmo ifelse de acima (FAZER O LINK COM QUEM FOI DESCARTADO ACIMA)
 w <- c(bcTSSval, gmTSSval, rfTSSval, mxTSSval, svTSSval) ##ja ignora o que for null
-#w_fut <- w[w <= tss.lim] ##adicionei isso pra retirar qualquer um que for NULL
-
 
 if (length(cur.bc) != 0) {
 st1 <- stack(cur.bc)
@@ -891,10 +914,11 @@ ens2.cur.sd.w <- sqrt(ens2.cur.sd.w) ##desvio padrão (incerteza) -- pra caso re
 
 wbc <- c(bcTSSval)
 wbc.sem.os.nulos <- wbc[wbc >= tss.lim]
-if(length(wbc.sem.os.nulos) == 0){
- print('bioclim is null') } else {
-cur.bc.mean.w <- weighted.mean(st2, wbc.sem.os.nulos)
-cur.bc.sd.w <- sum(wbc.sem.os.nulos * (st2 - cur.bc.mean.w)^2)
+
+if(length(wbc.sem.os.nulos) == 0) {
+ print('bioclim is null') }else {
+cur.bc.mean.w <- weighted.mean(st1, wbc.sem.os.nulos)
+cur.bc.sd.w <- sum(wbc.sem.os.nulos * (st1 - cur.bc.mean.w)^2)
 cur.bc.sd.w <- sqrt(cur.bc.sd.w) }
 
 
@@ -1029,33 +1053,43 @@ ens2.fut.sd.w <- sqrt(ens2.fut.sd.w)
 
 wbc <- c(bcTSSval)
 wbc.sem.os.nulos <- wbc[wbc >= tss.lim]
-future_variable.bc.mean.w <- weighted.mean(st2, wbc.sem.os.nulos)
-future_variable.bc.sd.w <- sum(wbc.sem.os.nulos * (st2 - future_variable.bc.mean.w)^2)
-future_variable.bc.sd.w <- sqrt(future_variable.bc.sd.w)
+if(length(wbc.sem.os.nulos) == 0){
+  print('bioclim is null') } else {
+future_variable.bc.mean.w <- weighted.mean(st1, wbc.sem.os.nulos)
+future_variable.bc.sd.w <- sum(wbc.sem.os.nulos * (st1 - future_variable.bc.mean.w)^2)
+future_variable.bc.sd.w <- sqrt(future_variable.bc.sd.w) }
 
 wgm <- c(gmTSSval)
 wgm.sem.os.nulos <- wgm[wgm >= tss.lim]
+if(length(wgm.sem.os.nulos) == 0){
+  print('glm is null') } else {
 future_variable.gm.mean.w <- weighted.mean(st2, wgm.sem.os.nulos)
 future_variable.gm.sd.w <- sum(wgm.sem.os.nulos * (st2 - future_variable.gm.mean.w)^2)
-future_variable.gm.sd.w <- sqrt(future_variable.gm.sd.w)
+future_variable.gm.sd.w <- sqrt(future_variable.gm.sd.w)}
 
 wrf <- c(rfTSSval)
 wrf.sem.os.nulos <- wrf[wrf >= tss.lim]
+if(length(wrf.sem.os.nulos) == 0){
+  print('rf is null') } else {
 future_variable.rf.mean.w <- weighted.mean(st3, wrf.sem.os.nulos)
 future_variable.rf.sd.w <- sum(wrf.sem.os.nulos * (st3 - future_variable.rf.mean.w)^2)
-future_variable.rf.sd.w <- sqrt(future_variable.rf.sd.w)
+future_variable.rf.sd.w <- sqrt(future_variable.rf.sd.w)}
 
 wmx <- c(mxTSSval)
 wmx.sem.os.nulos <- wmx[wmx >= tss.lim]
+if(length(wmx.sem.os.nulos) == 0){
+  print('mx is null') } else {
 future_variable.mx.mean.w <- weighted.mean(st4, wmx.sem.os.nulos)
 future_variable.mx.sd.w <- sum(wmx.sem.os.nulos * (st4 - future_variable.mx.mean.w)^2)
-future_variable.mx.sd.w <- sqrt(future_variable.mx.sd.w)
+future_variable.mx.sd.w <- sqrt(future_variable.mx.sd.w)}
 
 wsv <- c(svTSSval)
 wsv.sem.os.nulos <- wsv[wsv >= tss.lim]
+if(length(wsv.sem.os.nulos) == 0){
+  print('svm is null') } else {
 future_variable.sv.mean.w <- weighted.mean(st5, wsv.sem.os.nulos)
 future_variable.sv.sd.w <- sum(wsv.sem.os.nulos * (st5 - future_variable.sv.mean.w)^2)
-future_variable.sv.sd.w <- sqrt(future_variable.sv.sd.w)
+future_variable.sv.sd.w <- sqrt(future_variable.sv.sd.w)}
 
 ####
 
@@ -1105,4 +1139,7 @@ save.image("./outputs/my_analysis.rData")
 
 finished_time = Sys.time()
 cat( format( finished_time, "%a %b %d %X %Y"), '-', 'FINISHED', '\n')
-write(format( finished_time, "%a %b %d %X %Y"), file=pasteo(paste0("./outputs/", sp_names[a], "/FINISHED.txt"), sep=""))
+write(format( finished_time, "%a %b %d %X %Y"), file = paste0(target_dir, "FINISHED.txt", sep=""))
+
+}
+
