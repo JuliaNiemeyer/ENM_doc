@@ -114,6 +114,14 @@ pb <- txtProgressBar(min = 1, max = length(sp.names)+1, style = 3)
 #Tive que add o plyr::count aqui pra não confundir com dplyr senão dá erro
 lim = plyr::count(presences$species)$freq[indexOf(plyr::count(presences$species)$x, sp.n)]
 
+if (plyr::count(presences$species)$freq < 15){ ##Will not analyze species with less than 15 occurences
+  print('species has less than 15 records and will not be analyzed')
+  target_dir = paste(paste0("./outputs/", sp.n, "/results/", sep=""))
+  dir.create( target_dir )
+  write(format('species has less than 15 records and will not be analyzed'), file=paste(target_dir, 'STOP.txt', sep=""))
+  next
+  }
+
 started_time = Sys.time()
 cat( format( started_time, "%a %b %d %X %Y"), '-', 'STARTED', '\n')
 cat( format( started_time, "%a %b %d %X %Y"), '-', 'Preparing train and test datasets for', sp.n, 'with ', lim, 'lines...', '\n')
@@ -385,6 +393,21 @@ Valid <- data.frame(mod.sp, mod.names, TSS, AUC, kappa, stringsAsFactors=FALSE)
 write.csv(Valid, file = paste( target_dir, 'Valid_', sp.n, '.csv', sep=""))
 
 
+### Test if at least one model is valid. If no models are valid it will stop here and continue on the next species
+
+if(all(TSS < tss.lim)){
+  print('no models are valid') ##Stop this
+
+  cat( format( Sys.time(), "%a %b %d %X %Y"), '-', 'No models were valid for', sp.n, 'with ', lim, 'lines...', '\n')
+
+  save.image("./outputs/my_analysis.rData")
+
+  finished_time = Sys.time()
+  cat( format( finished_time, "%a %b %d %X %Y"), '-', 'FINISHED', '\n')
+  write(format( finished_time, "%a %b %d %X %Y"), file = paste0(target_dir, "FINISHED.txt", sep=""))
+
+  next
+}
 
 # Projecting models -------------------------------------------------------
 
@@ -909,14 +932,15 @@ ens2.cur.sd.w <- sum(w.sem.os.nulos * (st - ens2.cur)^2) ## variancia
 ens2.cur.sd.w <- sqrt(ens2.cur.sd.w) ##desvio padrão (incerteza) -- pra caso revisor peça
 
 
-
 # Uncertainty for each algo (each partition) -------------------------------------------------------------
 
 wbc <- c(bcTSSval)
 wbc.sem.os.nulos <- wbc[wbc >= tss.lim]
 
 if(length(wbc.sem.os.nulos) == 0) {
- print('bioclim is null') }else {
+ print('bioclim is null')
+  cur.bc.mean.w <- NULL
+  }else {
 cur.bc.mean.w <- weighted.mean(st1, wbc.sem.os.nulos)
 cur.bc.sd.w <- sum(wbc.sem.os.nulos * (st1 - cur.bc.mean.w)^2)
 cur.bc.sd.w <- sqrt(cur.bc.sd.w) }
@@ -936,7 +960,9 @@ cur.gm.sd.w <- sqrt(cur.gm.sd.w)
 wrf <- c(rfTSSval)
 wrf.sem.os.nulos <- wrf[wrf >= tss.lim]
 if (length(wrf.sem.os.nulos)==0){
-  print('rf is null') } else {
+  print('rf is null')
+  cur.rf.mean.w <- NULL
+  } else {
 cur.rf.mean.w <- weighted.mean(st3, wrf.sem.os.nulos)
 cur.rf.sd.w <- sum(wrf.sem.os.nulos * (st3 - cur.rf.mean.w)^2)
 cur.rf.sd.w <- sqrt(cur.rf.sd.w)
@@ -946,6 +972,7 @@ wmx <- c(mxTSSval)
 wmx.sem.os.nulos <- wmx[wmx >= tss.lim]
 if (length(wmx.sem.os.nulos)==0) {
   print('maxent is null')
+  cur.mx.mean.w <- NULL
 } else {
 cur.mx.mean.w <- weighted.mean(st4, wmx.sem.os.nulos)
 cur.mx.sd.w <- sum(wmx.sem.os.nulos * (st4 - cur.mx.mean.w)^2)
@@ -956,6 +983,7 @@ wsv <- c(svTSSval)
 wsv.sem.os.nulos <- wsv[wsv >= tss.lim]
 if (length(wsv.sem.os.nulos)==0){
   print('svmk is null')
+  cur.sv.mean.w <- NULL
 } else {
 cur.sv.mean.w <- weighted.mean(st5, wsv.sem.os.nulos)
 cur.sv.sd.w <- sum(wsv.sem.os.nulos * (st5 - cur.sv.mean.w)^2)
@@ -1056,7 +1084,9 @@ ens2.fut.sd.w <- sqrt(ens2.fut.sd.w)
 wbc <- c(bcTSSval)
 wbc.sem.os.nulos <- wbc[wbc >= tss.lim]
 if(length(wbc.sem.os.nulos) == 0){
-  print('bioclim is null') } else {
+  print('bioclim is null')
+  future_variable.bc.mean.w <- NULL
+  } else {
 future_variable.bc.mean.w <- weighted.mean(st1, wbc.sem.os.nulos)
 future_variable.bc.sd.w <- sum(wbc.sem.os.nulos * (st1 - future_variable.bc.mean.w)^2)
 future_variable.bc.sd.w <- sqrt(future_variable.bc.sd.w) }
@@ -1064,7 +1094,9 @@ future_variable.bc.sd.w <- sqrt(future_variable.bc.sd.w) }
 wgm <- c(gmTSSval)
 wgm.sem.os.nulos <- wgm[wgm >= tss.lim]
 if(length(wgm.sem.os.nulos) == 0){
-  print('glm is null') } else {
+  print('glm is null')
+  future_variable.gm.sd.w <- NULL
+  } else {
 future_variable.gm.mean.w <- weighted.mean(st2, wgm.sem.os.nulos)
 future_variable.gm.sd.w <- sum(wgm.sem.os.nulos * (st2 - future_variable.gm.mean.w)^2)
 future_variable.gm.sd.w <- sqrt(future_variable.gm.sd.w)}
@@ -1072,7 +1104,9 @@ future_variable.gm.sd.w <- sqrt(future_variable.gm.sd.w)}
 wrf <- c(rfTSSval)
 wrf.sem.os.nulos <- wrf[wrf >= tss.lim]
 if(length(wrf.sem.os.nulos) == 0){
-  print('rf is null') } else {
+  print('rf is null')
+  future_variable.rf.mean.w <- NULL
+  } else {
 future_variable.rf.mean.w <- weighted.mean(st3, wrf.sem.os.nulos)
 future_variable.rf.sd.w <- sum(wrf.sem.os.nulos * (st3 - future_variable.rf.mean.w)^2)
 future_variable.rf.sd.w <- sqrt(future_variable.rf.sd.w)}
@@ -1080,7 +1114,9 @@ future_variable.rf.sd.w <- sqrt(future_variable.rf.sd.w)}
 wmx <- c(mxTSSval)
 wmx.sem.os.nulos <- wmx[wmx >= tss.lim]
 if(length(wmx.sem.os.nulos) == 0){
-  print('mx is null') } else {
+  print('mx is null')
+  future_variable.mx.mean.w <- NULL
+    } else {
 future_variable.mx.mean.w <- weighted.mean(st4, wmx.sem.os.nulos)
 future_variable.mx.sd.w <- sum(wmx.sem.os.nulos * (st4 - future_variable.mx.mean.w)^2)
 future_variable.mx.sd.w <- sqrt(future_variable.mx.sd.w)}
@@ -1088,7 +1124,9 @@ future_variable.mx.sd.w <- sqrt(future_variable.mx.sd.w)}
 wsv <- c(svTSSval)
 wsv.sem.os.nulos <- wsv[wsv >= tss.lim]
 if(length(wsv.sem.os.nulos) == 0){
-  print('svm is null') } else {
+  print('svm is null')
+  future_variable.sv.mean.w <- NULL
+  } else {
 future_variable.sv.mean.w <- weighted.mean(st5, wsv.sem.os.nulos)
 future_variable.sv.sd.w <- sum(wsv.sem.os.nulos * (st5 - future_variable.sv.mean.w)^2)
 future_variable.sv.sd.w <- sqrt(future_variable.sv.sd.w)}
