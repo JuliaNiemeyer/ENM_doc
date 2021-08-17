@@ -1099,7 +1099,7 @@ tval <- tval[tval != 0]
 tval <- median(tval)
 ens.fut.bin <- ens.fut >= tval
 
-
+###PRECISA MUDAR O NOME DAS VRIAVEIS
 cat( format( Sys.time(), "%a %b %d %X %Y"), '-', 'Saving ensemble maps of', sp.n, '...', '\n')
 writeRaster(ens2.cur, file = paste(target_dir, '/CUR.cont_', sp.n, '.asc', sep=""),overwrite=TRUE)
 writeRaster(ens2.future_variable, file = paste(target_dir, '/MPI8570.cont_', sp.n, '.asc', sep=""),overwrite=TRUE)
