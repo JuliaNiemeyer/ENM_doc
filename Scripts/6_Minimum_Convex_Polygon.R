@@ -41,7 +41,7 @@ crs.albers <-
                   +x_0=0 +y_0=0 +ellps=aust_SA +units=m +no_defs")
 
 # Read your present AND FUTURE environmental raster selected by correlation
-pres_files <- list.files("./Maps/Present/10m", full.names = T, 'tif$|bil$')
+pres_files <- list.files("./Maps/Present/30s", full.names = T, 'tif$|bil$')
 head(pres_files)
 
 envi <- stack(pres_files)
@@ -49,7 +49,9 @@ envi <- stack(pres_files)
 envi.cut <- crop(envi, c(-160, -28, -60, 90))
 plot(envi.cut[[1]])
 
-fut_files <- list.files("./Maps/Future/he45bi50_10min", full.names = T, 'tif$|bil$')
+
+##RCP45
+fut_files <- list.files("./Maps/Future/rcp45", full.names = T, 'tif$|bil$')
 head(fut_files)
 
 envi_fut <- stack(fut_files)
@@ -57,6 +59,13 @@ envi_fut_cut <- crop(envi_fut, c(-160, -28, -60, 90))
 #fut_envi_res <- resample(envi_fut, envi.cut, method='bilinear')
 #plot(envi_fut_cut[[1]])
 
+
+##RCP85
+fut_files2 <- list.files("./Maps/Future/rcp85", full.names = T, 'tif$|bil$')
+head(fut_files2)
+
+envi_fut2 <- stack(fut_files2)
+envi_fut_cut2 <- crop(envi_fut2, c(-160, -28, -60, 90))
 
 #length(sp_names) <- 6
 
@@ -136,6 +145,7 @@ present_ly2 <- mask(present_ly, polygon_wgs)
 
 
 # Cut your study area for the same extention and shape of your mpc
+##RCP 45
 future_ly <- crop(envi_fut_cut, polygon_wgs)
 future_ly2 <- mask(future_ly, polygon_wgs)
 #future_ly2[[3]] <- future_ly2[[3]]/10 #Bio4 tem que ser dividida por 10 ou por 100?
@@ -144,6 +154,14 @@ future_ly2 <- mask(future_ly, polygon_wgs)
 #plot(future_ly2[[3]])
 #plot(occurrence_records, add = T)
 
+##RCP 85
+future_ly3 <- crop(envi_fut_cut2, polygon_wgs)
+future_ly4 <- mask(future_ly3, polygon_wgs)
+#future_ly2[[3]] <- future_ly2[[3]]/10 #Bio4 tem que ser dividida por 10 ou por 100?
+
+# Plot the results
+#plot(future_ly2[[3]])
+#plot(occurrence_records, add = T)
 
 
 # Save your layers --------------------------------------------------------
@@ -172,10 +190,15 @@ dir.create(paste0("./outputs/", sp_names[a], "/Pres_env_crop/"))
 writeRaster(present_ly2, filename=paste0("./outputs/", sp_names[a], "/Pres_env_crop/", names(present_ly2)), bylayer=TRUE, format="GTiff")
 
 dir.create(paste0("./outputs/",sp_names[a], "/Fut_env_crop/"))
-writeRaster(future_ly2, filename=paste0("./outputs/", sp_names[a], "/Fut_env_crop/", names(future_ly2)), bylayer=TRUE, format="GTiff")
+dir.create(paste0("./outputs/",sp_names[a], "/Fut_env_crop/rcp45"))
+writeRaster(future_ly2, filename=paste0("./outputs/", sp_names[a], "/Fut_env_crop/rcp45", names(future_ly2)), bylayer=TRUE, format="GTiff")
+dir.create(paste0("./outputs/",sp_names[a], "/Fut_env_crop/rcp85"))
+writeRaster(future_ly4, filename=paste0("./outputs/", sp_names[a], "/Fut_env_crop/rcp85", names(future_ly2)), bylayer=TRUE, format="GTiff")
 
 }
 rm(future_ly)
 rm(future_ly2)
+rm(future_ly3)
+rm(future_ly4)
 rm(present_ly)
 rm(present_ly2)

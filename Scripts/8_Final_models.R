@@ -95,7 +95,9 @@ predictors <- stack(raster_files)
 
 # Read your future environmental rasters selected by correlation
 #raster_files2 <- list.files('./Maps/Future/rcp45', full.names = T, 'tif$|bil$')
-raster_files2 <- list.files(paste0("./outputs/", sp.n, "/Fut_env_crop/"), full.names = T, 'tif$|bil$')
+
+## ERP45
+raster_files2 <- list.files(paste0("./outputs/", sp.n, "/Fut_env_crop/rcp45"), full.names = T, 'tif$|bil$')
 head(raster_files2)
 
 future_variable <- stack(raster_files2)
@@ -103,6 +105,15 @@ future_variable[[3]] <- future_variable[[3]]/10 ##divide Temperature values by 1
 future_variable[[4]] <- future_variable[[4]]/10
 #names(future_variable)
 
+
+####RCP85
+raster_files3 <- list.files(paste0("./outputs/", sp.n, "/Fut_env_crop/rcp85"), full.names = T, 'tif$|bil$')
+head(raster_files3)
+
+future_variable2 <- stack(raster_files3)
+future_variable2[[3]] <- future_variable2[[3]]/10 ##divide Temperature values by 10 [https://worldclim.org/data/v1.4/formats.html]
+future_variable2[[4]] <- future_variable2[[4]]/10
+#names(future_variable)
 
 # ENM ---------------------------------------------------------------------
 
@@ -421,22 +432,26 @@ cur.bc <- list()
 cur.bc.bin <- list()
 future_variable.bc <- list()
 future_variable.bc.bin <- list()
-
+future_variable2.bc <- list()
+future_variable.bc2.bin <- list()
 
 for(i in 1:k){
   cat( format( Sys.time(), "%a %b %d %X %Y"), '-', 'Projecting Bioclim (', i, ') model of', sp.n, '...', '\n')
   if(bcTSS[[i]] >= tss.lim){
     cur.bc[[i]] <- predict(predictors, bc[[i]])
     cur.bc.bin[[i]] <- cur.bc[[i]] > bcthres[[i]]
-    ##AQUI TA DANDO 0 pra os future_variable.bc
     future_variable.bc[[i]] <- predict(future_variable, bc[[i]])
     future_variable.bc.bin[[i]] <- future_variable.bc[[i]] > bcthres[[i]]
+    future_variable2.bc[[i]] <- predict(future_variable2, bc[[i]])
+    future_variable2.bc.bin[[i]] <- future_variable2.bc[[i]] > bcthres[[i]]
 
   } else {
     cur.bc[[i]] <- NULL
     cur.bc.bin[[i]] <- NULL
     future_variable.bc[[i]] <- NULL
     future_variable.bc.bin[[i]] <- NULL
+    future_variable2.bc[[i]] <- NULL
+    future_variable2.bc.bin[[i]] <- NULL
   }
 }
 
@@ -455,12 +470,20 @@ cur.bc.ens.bin <- cur.bc.ens >= tval
 ##########
 future_variable.bc <- Filter(Negate(is.null), future_variable.bc)
 future_variable.bc.bin <- Filter(Negate(is.null), future_variable.bc.bin)
+future_variable2.bc <- Filter(Negate(is.null), future_variable2.bc)
+future_variable2.bc.bin <- Filter(Negate(is.null), future_variable2.bc.bin)
 
 future_variable.bc.ens <- Reduce('+', future_variable.bc.bin)
 tval <- unique(future_variable.bc.ens)
 tval <- tval[tval != 0]
 tval <- median(tval)
 future_variable.bc.ens.bin <- future_variable.bc.ens >= tval
+
+future_variable2.bc.ens <- Reduce('+', future_variable2.bc.bin)
+tval <- unique(future_variable2.bc.ens)
+tval <- tval[tval != 0]
+tval <- median(tval)
+future_variable2.bc.ens.bin <- future_variable2.bc.ens >= tval
 
 ##########
 
@@ -483,15 +506,27 @@ if(length(cur.bc) != 0) {
     future_variable.bc[[z]] <- calc(adeq, adeq_norm)
   }
 
+  for(z in 1:length(future_variable2.bc)){
+    adeq = future_variable2.bc[[z]]
+    minimo <- min(adeq[], na.rm=T)
+    maximo <- max(adeq[], na.rm=T)
+    adeq_norm <- function(x) {(x-minimo)/(maximo-minimo)}
+    future_variable2.bc[[z]] <- calc(adeq, adeq_norm)
+  }
+
   #Ensemble of continuos models
   x <- stack(cur.bc)
   cur.bc.cont <- calc(x, fun = mean)
 
   x <- stack(future_variable.bc)
   future_variable.bc.cont <- calc(x, fun = mean)
+
+  x <- stack(future_variable2.bc)
+  future_variable2.bc.cont <- calc(x, fun = mean)
 } else {
   cur.bc.cont <- NULL
   future_variable.bc.cont <- NULL
+  future_variable2.bc.cont <- NULL
 }
 
 ##obs. isso aqui talve remover - ver oq faz mas talvez não precise (rodar e ver)
@@ -512,6 +547,8 @@ cur.gm <- list()
 cur.gm.bin <- list()
 future_variable.gm <- list()
 future_variable.gm.bin <- list()
+future_variable2.gm <- list()
+future_variable2.gm.bin <- list()
 
 for(i in 1:k){
   cat( format( Sys.time(), "%a %b %d %X %Y"), '-', 'Projecting GLMs (', i, ') of', sp.n, '...', '\n')
@@ -520,13 +557,16 @@ for(i in 1:k){
     cur.gm.bin[[i]] <- cur.gm[[i]] > gmthres[[i]]
     future_variable.gm[[i]] <- predict(future_variable, gm[[i]])
     future_variable.gm.bin[[i]] <- future_variable.gm[[i]] > gmthres[[i]]
+    future_variable2.gm[[i]] <- predict(future_variable2, gm[[i]])
+    future_variable2.gm.bin[[i]] <- future_variable2.gm[[i]] > gmthres[[i]]
 
   } else {
     cur.gm[[i]] <- NULL
     cur.gm.bin[[i]] <- NULL
     future_variable.gm[[i]] <- NULL
     future_variable.gm.bin[[i]] <- NULL
-
+    future_variable2.gm[[i]] <- NULL
+    future_variable2.gm.bin[[i]] <- NULL
   }
 }
 
@@ -545,12 +585,20 @@ cur.gm.ens.bin <- cur.gm.ens >= tval
 ##########
 future_variable.gm <- Filter(Negate(is.null), future_variable.gm)
 future_variable.gm.bin <- Filter(Negate(is.null), future_variable.gm.bin)
+future_variable2.gm <- Filter(Negate(is.null), future_variable2.gm)
+future_variable2.gm.bin <- Filter(Negate(is.null), future_variable2.gm.bin)
 
 future_variable.gm.ens <- Reduce('+', future_variable.gm.bin)
 tval <- unique(future_variable.gm.ens)
 tval <- tval[tval != 0]
 tval <- median(tval)
 future_variable.gm.ens.bin <- future_variable.gm.ens >= tval
+
+future_variable2.gm.ens <- Reduce('+', future_variable2.gm.bin)
+tval <- unique(future_variable2.gm.ens)
+tval <- tval[tval != 0]
+tval <- median(tval)
+future_variable2.gm.ens.bin <- future_variable2.gm.ens >= tval
 
 
 ##########
@@ -573,6 +621,13 @@ for(z in 1:length(future_variable.gm)){
   future_variable.gm[[z]] <- calc(adeq, adeq_norm)
 }
 
+  for(z in 1:length(future_variable2.gm)){
+    adeq = future_variable2.gm[[z]]
+    minimo <- min(adeq[], na.rm=T)
+    maximo <- max(adeq[], na.rm=T)
+    adeq_norm <- function(x) {(x-minimo)/(maximo-minimo)}
+    future_variable2.gm[[z]] <- calc(adeq, adeq_norm)
+  }
 
 x <- stack(cur.gm)
 cur.gm.cont <- calc(x, fun = mean)
@@ -580,9 +635,13 @@ cur.gm.cont <- calc(x, fun = mean)
 x <- stack(future_variable.gm)
 future_variable.gm.cont <- calc(x, fun = mean)
 
+x <- stack(future_variable2.gm)
+future_variable2.gm.cont <- calc(x, fun = mean)
+
 } else {
   cur.gm.cont <- NULL
   future_variable.gm.cont <- NULL
+  future_variable2.gm.cont <- NULL
 }
 
 
@@ -595,6 +654,8 @@ cur.rf <- list()
 cur.rf.bin <- list()
 future_variable.rf <- list()
 future_variable.rf.bin <- list()
+future_variable2.rf <- list()
+future_variable2.rf.bin <- list()
 
 
 for(i in 1:k){
@@ -605,12 +666,18 @@ for(i in 1:k){
 
     future_variable.rf[[i]] <- predict(future_variable, rf[[i]])
     future_variable.rf.bin[[i]] <- future_variable.rf[[i]] > rfthres[[i]]
+
+    future_variable2.rf[[i]] <- predict(future_variable2, rf[[i]])
+    future_variable2.rf.bin[[i]] <- future_variable2.rf[[i]] > rfthres[[i]]
+
   } else {
 
     cur.rf[[i]] <- NULL
     cur.rf.bin[[i]] <- NULL
     future_variable.rf[[i]] <- NULL
     future_variable.rf.bin[[i]] <- NULL
+    future_variable2.rf[[i]] <- NULL
+    future_variable2.rf.bin[[i]] <- NULL
 
   }
 }
@@ -630,12 +697,20 @@ cur.rf.ens.bin <- cur.rf.ens >= tval
 future_variable.rf <- Filter(Negate(is.null), future_variable.rf)
 future_variable.rf.bin <- Filter(Negate(is.null), future_variable.rf.bin)
 
+future_variable2.rf <- Filter(Negate(is.null), future_variable2.rf)
+future_variable2.rf.bin <- Filter(Negate(is.null), future_variable2.rf.bin)
+
 future_variable.rf.ens <- Reduce('+', future_variable.rf.bin)
 tval <- unique(future_variable.rf.ens)
 tval <- tval[tval != 0]
 tval <- median(tval)
 future_variable.rf.ens.bin <- future_variable.rf.ens >= tval
 
+future_variable2.rf.ens <- Reduce('+', future_variable2.rf.bin)
+tval <- unique(future_variable2.rf.ens)
+tval <- tval[tval != 0]
+tval <- median(tval)
+future_variable2.rf.ens.bin <- future_variable2.rf.ens >= tval
 
 ##########
 
@@ -662,17 +737,33 @@ for(z in 1:length(future_variable.rf)){
   }
 }
 
+for(z in 1:length(future_variable2.rf)){
+    adeq = future_variable2.rf[[z]]
+    if(sum(adeq[], na.rm=T)!=0){
+      minimo <- min(adeq[], na.rm=T)
+      maximo <- max(adeq[], na.rm=T)
+      adeq_norm <- function(x) {(x-minimo)/(maximo-minimo)}
+      future_variable2.rf[[z]] <- calc(adeq, adeq_norm)
+    }
+  }
+
 cur.rf <- Filter(Negate(is.null), cur.rf)
 future_variable.rf <- Filter(Negate(is.null), future_variable.rf)
+future_variable2.rf <- Filter(Negate(is.null), future_variable2.rf)
 
 x <- stack(cur.rf)
 cur.rf.cont <- calc(x, fun = mean)
 
 x <- stack(future_variable.rf)
 future_variable.rf.cont <- calc(x, fun = mean)
+
+x <- stack(future_variable2.rf)
+future_variable2.rf.cont <- calc(x, fun = mean)
+
 } else {
   future_variable.rf.cont <- NULL
   cur.rf.cont <- NULL
+  future_variable2.rf.cont <- NULL
 }
 
 
@@ -685,6 +776,8 @@ cur.mx <- list()
 cur.mx.bin <- list()
 future_variable.mx <- list()
 future_variable.mx.bin <- list()
+future_variable2.mx <- list()
+future_variable2.mx.bin <- list()
 
 for(i in 1:k){
   cat( format( Sys.time(), "%a %b %d %X %Y"), '-', 'Projecting Maxent (', i, ') models of', sp.n, '...', '\n')
@@ -695,11 +788,16 @@ for(i in 1:k){
     future_variable.mx[[i]] <- predict(future_variable, mx[[i]])
     future_variable.mx.bin[[i]] <- future_variable.mx[[i]] > mxthres[[i]]
 
+    future_variable2.mx[[i]] <- predict(future_variable2, mx[[i]])
+    future_variable2.mx.bin[[i]] <- future_variable2.mx[[i]] > mxthres[[i]]
+
   } else {
     cur.mx[[i]] <- NULL
     cur.mx.bin[[i]] <- NULL
     future_variable.mx[[i]] <- NULL
     future_variable.mx.bin[[i]] <- NULL
+    future_variable2.mx[[i]] <- NULL
+    future_variable2.mx.bin[[i]] <- NULL
 
   }
 }
@@ -719,12 +817,20 @@ cur.mx.ens.bin <- cur.mx.ens >= tval
 ##########
 future_variable.mx <- Filter(Negate(is.null), future_variable.mx)
 future_variable.mx.bin <- Filter(Negate(is.null), future_variable.mx.bin)
+future_variable2.mx <- Filter(Negate(is.null), future_variable2.mx)
+future_variable2.mx.bin <- Filter(Negate(is.null), future_variable2.mx.bin)
 
 future_variable.mx.ens <- Reduce('+', future_variable.mx.bin)
 tval <- unique(future_variable.mx.ens)
 tval <- tval[tval != 0]
 tval <- median(tval)
 future_variable.mx.ens.bin <- future_variable.mx.ens >= tval
+
+future_variable2.mx.ens <- Reduce('+', future_variable2.mx.bin)
+tval <- unique(future_variable2.mx.ens)
+tval <- tval[tval != 0]
+tval <- median(tval)
+future_variable2.mx.ens.bin <- future_variable2.mx.ens >= tval
 
 
 ##########
@@ -750,14 +856,29 @@ for(z in 1:length(future_variable.mx)){
   }
 }
 
+for(z in 1:length(future_variable2.mx)){
+    adeq = future_variable2.mx[[z]]
+    if(sum(adeq[], na.rm=T)!=0){
+      minimo <- min(adeq[], na.rm=T)
+      maximo <- max(adeq[], na.rm=T)
+      adeq_norm <- function(x) {(x-minimo)/(maximo-minimo)}
+      future_variable2.mx[[z]] <- calc(adeq, adeq_norm)
+    }
+  }
+
 x <- stack(cur.mx)
 cur.mx.cont <- calc(x, fun = mean)
 
 x <- stack(future_variable.mx)
 future_variable.mx.cont <- calc(x, fun = mean)
+
+x <- stack(future_variable2.mx)
+future_variable2.mx.cont <- calc(x, fun = mean)
+
 } else {
   cur.mx.cont <- NULL
   future_variable.mx.cont <- NULL
+  future_variable2.mx.cont <- NULL
 }
 
 
@@ -781,12 +902,16 @@ for(i in 1:k){
     future_variable.sv[[i]] <- predict(future_variable, sv[[i]])
     future_variable.sv.bin[[i]] <- future_variable.sv[[i]] > svthres[[i]]
 
+    future_variable2.sv[[i]] <- predict(future_variable2, sv[[i]])
+    future_variable2.sv.bin[[i]] <- future_variable2.sv[[i]] > svthres[[i]]
+
   } else {
     cur.sv[[i]] <- NULL
     cur.sv.bin[[i]] <- NULL
     future_variable.sv[[i]] <- NULL
     future_variable.sv.bin[[i]] <- NULL
-
+    future_variable2.sv[[i]] <- NULL
+    future_variable2.sv.bin[[i]] <- NULL
   }
 }
 
@@ -805,12 +930,20 @@ cur.sv.ens.bin <- cur.sv.ens >= tval
 ##########
 future_variable.sv <- Filter(Negate(is.null), future_variable.sv)
 future_variable.sv.bin <- Filter(Negate(is.null), future_variable.sv.bin)
+future_variable2.sv <- Filter(Negate(is.null), future_variable2.sv)
+future_variable2.sv.bin <- Filter(Negate(is.null), future_variable2.sv.bin)
 
 future_variable.sv.ens <- Reduce('+', future_variable.sv.bin)
 tval <- unique(future_variable.sv.ens)
 tval <- tval[tval != 0]
 tval <- median(tval)
 future_variable.sv.ens.bin <- future_variable.sv.ens >= tval
+
+future_variable2.sv.ens <- Reduce('+', future_variable2.sv.bin)
+tval <- unique(future_variable2.sv.ens)
+tval <- tval[tval != 0]
+tval <- median(tval)
+future_variable2.sv.ens.bin <- future_variable2.sv.ens >= tval
 
 
 ##########
@@ -834,6 +967,13 @@ for(z in 1:length(future_variable.sv)){
   future_variable.sv[[z]] <- calc(adeq, adeq_norm)
 }
 
+for(z in 1:length(future_variable2.sv)){
+    adeq = future_variable2.sv[[z]]
+    minimo <- min(adeq[], na.rm=T)
+    maximo <- max(adeq[], na.rm=T)
+    adeq_norm <- function(x) {(x-minimo)/(maximo-minimo)}
+    future_variable2.sv[[z]] <- calc(adeq, adeq_norm)
+  }
 
 x <- stack(cur.sv)
 cur.sv.cont <- calc(x, fun = mean)
@@ -841,9 +981,13 @@ cur.sv.cont <- calc(x, fun = mean)
 x <- stack(future_variable.sv)
 future_variable.sv.cont <- calc(x, fun = mean)
 
+x <- stack(future_variable2.sv)
+future_variable2.sv.cont <- calc(x, fun = mean)
+
 } else {
   cur.sv.cont <- NULL
   future_variable.sv.cont <- NULL
+  future_variable2.sv.cont <- NULL
 }
 
 
@@ -990,7 +1134,7 @@ cur.sv.sd.w <- sum(wsv.sem.os.nulos * (st5 - cur.sv.mean.w)^2)
 cur.sv.sd.w <- sqrt(cur.sv.sd.w)
 }
 
-# Ensemble (future) -------------------------------------------------------------
+# Ensemble (future) RCP45 -------------------------------------------------------------
 
 # For binary model
 
@@ -1139,20 +1283,174 @@ tval <- tval[tval != 0]
 tval <- median(tval)
 ens.fut.bin <- ens.fut >= tval
 
+# Ensemble (future) RCP85 -------------------------------------------------------------
+
+# For binary model
+
+# binarios
+algo.future_variable2 <- c(future_variable2.bc.ens.bin, future_variable2.gm.ens.bin, future_variable2.rf.ens.bin, future_variable2.mx.ens.bin, future_variable2.sv.ens.bin)
+algo.future_variable2 <- algo.future_variable2[lapply(algo.future_variable2, length) > 0] ##ignores NULL rasters but not NA
+#algo.future_variable2 <- list()
+
+## Ignores rasters that are all NA
+#for (i in 1:length(algo.future_variable)){
+#if (!is.na(minValue(algo.future_variable[[i]]))){
+# print('it is not NA')
+# algo.future_variable2[[i]] <- algo.future_variable[[i]]
+#}
+#}
+
+ens.future_variable2 <- Reduce('+', algo.future_variable2)
+tval <- unique(ens.future_variable2)
+tval <- tval[tval != 0]
+tval <- median(tval)
+ens.future_variable2.bin <- ens.future_variable2 >= tval
+
+
+
+if (length(future_variable2.bc) != 0){
+  st1 <- stack(future_variable2.bc)
+  for(i in 1:length(future_variable2.bc)){
+    min_max <- range(future_variable2.bc[[i]][], na.rm=T)
+    #write.table(min_max, paste("future_variable.bc", i, sp.n, ".txt",  sep="_"))
+  }} else {
+    st1 <- NULL
+  }
+#rm(future_variable.bc)
+
+# continuous com ifelse
+
+if (length(future_variable2.gm) != 0){
+  st2 <- stack(future_variable2.gm)
+  for(i in 1:length(future_variable2.gm)){
+    min_max <- range(future_variable2.gm[[i]][], na.rm=T)
+    #write.table(min_max, paste("future_variable.gm", i, sp.n, ".txt",  sep="_"))
+  }} else{
+    st2 <- NULL
+  }
+
+
+if (length(future_variable2.rf) != 0){
+  st3 <- stack(future_variable2.rf)
+  for(i in 1:length(future_variable2.rf)){
+    min_max <- range(future_variable2.rf[[i]][], na.rm=T)
+    #write.table(min_max, paste("future_variable.rf", i, sp.n, ".txt",  sep="_"))
+  }} else {
+    st3 <- NULL
+  }
+
+
+if (length(future_variable2.mx) != 0){
+  st4 <- stack(future_variable2.mx)
+  for(i in 1:length(future_variable2.mx)){
+    min_max <- range(future_variable2.mx[[i]][], na.rm=T)
+    #write.table(min_max, paste("future_variable.mx", i, sp.n, ".txt",  sep="_"))
+  }} else {
+    st4 <- NULL
+  }
+
+
+
+if (length(future_variable2.sv) != 0){
+  st5 <- stack(future_variable2.sv)
+  for(i in 1:length(future_variable2.sv)){
+    min_max <- range(future_variable2.sv[[i]][], na.rm=T)
+    #write.table(min_max, paste("future_variable.sv", i, sp.n, ".txt",  sep="_"))
+  }} else {
+    st5 <- NULL
+  }
+
+
+#rm(future_variable.sv)
+
+stack_fut2 <- c(st1, st2, st3, st4, st5)
+st_fut2 <- stack(stack_fut2)
+w.sem.os.nulos <- w[w >= tss.lim]
+ens2.future_variable2 <- weighted.mean(st_fut2, w.sem.os.nulos)
+ens.fut.cont2 <- ens2.future_variable2
+ens2.fut.sd.w2 <- sum(w.sem.os.nulos * (st_fut - ens.fut.cont2)^2)
+ens2.fut.sd.w2 <- sqrt(ens2.fut.sd.w2)
+
+
+# Uncertainty future ------------------------------------------------------
+
+wbc <- c(bcTSSval)
+wbc.sem.os.nulos <- wbc[wbc >= tss.lim]
+if(length(wbc.sem.os.nulos) == 0){
+  print('bioclim is null')
+  future_variable2.bc.mean.w <- NULL
+} else {
+  future_variable2.bc.mean.w <- weighted.mean(st1, wbc.sem.os.nulos)
+  future_variable2.bc.sd.w <- sum(wbc.sem.os.nulos * (st1 - future_variable2.bc.mean.w)^2)
+  future_variable2.bc.sd.w <- sqrt(future_variable2.bc.sd.w) }
+
+wgm <- c(gmTSSval)
+wgm.sem.os.nulos <- wgm[wgm >= tss.lim]
+if(length(wgm.sem.os.nulos) == 0){
+  print('glm is null')
+  future_variable2.gm.sd.w <- NULL
+} else {
+  future_variable2.gm.mean.w <- weighted.mean(st2, wgm.sem.os.nulos)
+  future_variable2.gm.sd.w <- sum(wgm.sem.os.nulos * (st2 - future_variable2.gm.mean.w)^2)
+  future_variable2.gm.sd.w <- sqrt(future_variable2.gm.sd.w)}
+
+wrf <- c(rfTSSval)
+wrf.sem.os.nulos <- wrf[wrf >= tss.lim]
+if(length(wrf.sem.os.nulos) == 0){
+  print('rf is null')
+  future_variable2.rf.mean.w <- NULL
+} else {
+  future_variable2.rf.mean.w <- weighted.mean(st3, wrf.sem.os.nulos)
+  future_variable2.rf.sd.w <- sum(wrf.sem.os.nulos * (st3 - future_variable2.rf.mean.w)^2)
+  future_variable2.rf.sd.w <- sqrt(future_variable2.rf.sd.w)}
+
+wmx <- c(mxTSSval)
+wmx.sem.os.nulos <- wmx[wmx >= tss.lim]
+if(length(wmx.sem.os.nulos) == 0){
+  print('mx is null')
+  future_variable2.mx.mean.w <- NULL
+} else {
+  future_variable2.mx.mean.w <- weighted.mean(st4, wmx.sem.os.nulos)
+  future_variable2.mx.sd.w <- sum(wmx.sem.os.nulos * (st4 - future_variable2.mx.mean.w)^2)
+  future_variable2.mx.sd.w <- sqrt(future_variable2.mx.sd.w)}
+
+wsv <- c(svTSSval)
+wsv.sem.os.nulos <- wsv[wsv >= tss.lim]
+if(length(wsv.sem.os.nulos) == 0){
+  print('svm is null')
+  future_variable2.sv.mean.w <- NULL
+} else {
+  future_variable2.sv.mean.w <- weighted.mean(st5, wsv.sem.os.nulos)
+  future_variable2.sv.sd.w <- sum(wsv.sem.os.nulos * (st5 - future_variable2.sv.mean.w)^2)
+  future_variable2.sv.sd.w <- sqrt(future_variable2.sv.sd.w)}
+
+####
+
+ens.fut2 <- ens.future_variable2.bin
+tval <- unique(ens.fut2)
+tval <- tval[tval != 0]
+tval <- median(tval)
+ens.fut.bin2 <- ens.fut2 >= tval
+
 ###PRECISA MUDAR O NOME DAS VRIAVEIS
 cat( format( Sys.time(), "%a %b %d %X %Y"), '-', 'Saving ensemble maps of', sp.n, '...', '\n')
 if(!is.null(ens2.cur)){
 writeRaster(ens2.cur, file = paste(target_dir, '/CUR.cont_', sp.n, '.asc', sep=""),overwrite=TRUE)
-writeRaster(ens2.future_variable, file = paste(target_dir, '/Fut.HGemES.cont_', sp.n, '.asc', sep=""),overwrite=TRUE)
+writeRaster(ens2.future_variable, file = paste(target_dir, '/Fut.HGemES.rcp_45.cont_', sp.n, '.asc', sep=""),overwrite=TRUE)
+writeRaster(ens2.future_variable2, file = paste(target_dir, '/Fut.HGemES.rcp_85.cont_', sp.n, '.asc', sep=""),overwrite=TRUE)
+
 }
 if(!is.null(ens.cur.bin)){
 writeRaster(ens.cur.bin, file = paste(target_dir, '/CUR.bin_', sp.n, '.asc', sep=""),overwrite=TRUE)
-writeRaster(ens.future_variable.bin, file = paste(target_dir, '/Fut.HGemES.bin_', sp.n, '.asc', sep=""),overwrite=TRUE)
+writeRaster(ens.future_variable.bin, file = paste(target_dir, '/Fut.HGemES.rcp_45.bin_', sp.n, '.asc', sep=""),overwrite=TRUE)
+writeRaster(ens.future_variable2.bin, file = paste(target_dir, '/Fut.HGemES.rcp_85.bin_', sp.n, '.asc', sep=""),overwrite=TRUE)
+
 }
 #weighted.mean and weighted.sd
 if(!is.null(ens2.cur.sd.w)){
 writeRaster(ens2.cur.sd.w, file = paste(target_dir, '/ens.cur.sd.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
-writeRaster(ens2.fut.sd.w, file = paste(target_dir, '/ens.Fut.HGemES.sd.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
+writeRaster(ens2.fut.sd.w, file = paste(target_dir, '/ens.Fut.HGemES.rcp_45.sd.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
+writeRaster(ens2.fut.sd.w2, file = paste(target_dir, '/ens.Fut.HGemES.rcp_85.sd.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
 }
 #writeRaster(cur.bc.mean.w, file = paste(target_dir, '/cur.bc.mean.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
 #writeRaster(cur.bc.sd.w, file = paste(target_dir, '/cur.bc.sd.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
@@ -1176,22 +1474,37 @@ writeRaster(cur.sv.sd.w, file = paste(target_dir, '/cur.sv.sd.w_', sp.n, '.asc',
 #writeRaster(future_variable.bc.sd.w, file = paste(target_dir, '/mpi8570.bc.sd.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
 #writeRaster(future_variable.gm.mean.w, file = paste(target_dir, '/mpi8570.gm.mean.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
 if(!is.null(future_variable.gm.sd.w)){
-writeRaster(future_variable.gm.sd.w, file = paste(target_dir, '/Fut.HGemES.gm.sd.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
+writeRaster(future_variable.gm.sd.w, file = paste(target_dir, '/Fut.HGemES.rcp_45.gm.sd.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
+}
+
+if(!is.null(future_variable2.gm.sd.w)){
+  writeRaster(future_variable2.gm.sd.w, file = paste(target_dir, '/Fut.HGemES.rcp_85.gm.sd.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
 }
   #writeRaster(future_variable.rf.mean.w, file = paste(target_dir, '/mpi8570.rf.mean.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
 
 if(!is.null(future_variable.rf.sd.w)){
-writeRaster(future_variable.rf.sd.w, file = paste(target_dir, '/Fut.HGemES.rf.sd.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
+writeRaster(future_variable.rf.sd.w, file = paste(target_dir, '/Fut.HGemES.rcp_45.rf.sd.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
+}
+
+if(!is.null(future_variable2.rf.sd.w)){
+  writeRaster(future_variable2.rf.sd.w, file = paste(target_dir, '/Fut.HGemES.rcp_85.rf.sd.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
 }
   #writeRaster(future_variable.mx.mean.w, file = paste(target_dir, '/mpi8570.mx.mean.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
 if(!is.null(future_variable.mx.sd.w)){
-writeRaster(future_variable.mx.sd.w, file = paste(target_dir, '/Fut.HGemES.mx.sd.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
+writeRaster(future_variable.mx.sd.w, file = paste(target_dir, '/Fut.HGemES.rcp_45.mx.sd.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
+}
+
+if(!is.null(future_variable2.mx.sd.w)){
+  writeRaster(future_variable2.mx.sd.w, file = paste(target_dir, '/Fut.HGemES.rcp_85.mx.sd.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
 }
   #writeRaster(future_variable.sv.mean.w, file = paste(target_dir, '/mpi8570.sv.mean.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
 if(!is.null(future_variable.sv.sd.w)){
-writeRaster(future_variable.sv.sd.w, file = paste(target_dir, '/Fut.HGemES.sv.sd.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
+writeRaster(future_variable.sv.sd.w, file = paste(target_dir, '/Fut.HGemES.rcp_45.sv.sd.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
 }
 
+if(!is.null(future_variable2.sv.sd.w)){
+  writeRaster(future_variable2.sv.sd.w, file = paste(target_dir, '/Fut.HGemES.rcp_85.sv.sd.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
+}
 
 cat( format( Sys.time(), "%a %b %d %X %Y"), '-', 'Finished train and test datasets for', sp.n, 'with ', lim, 'lines...', '\n')
 
