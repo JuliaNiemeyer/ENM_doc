@@ -25,6 +25,7 @@ library(randomForest)
 library(maptools)
 library(SDMTools)
 library(dplyr)
+library(beepr)
 
 
 
@@ -77,7 +78,7 @@ sp_names <- unique(sp$species)
 
 for (a in 1:length(sp_names)) {
 sp.n = sp_names[[a]]
-# message("starting the analysis for ", paste0(sp.n))
+ message("starting the analysis for ", paste0(sp.n))
 
 presences <- read.csv(file)  %>%
   filter(species == paste0(sp.n)) %>%
@@ -1516,3 +1517,4 @@ write(format( finished_time, "%a %b %d %X %Y"), file = paste0(target_dir, "FINIS
 
 }
 
+beep(5)

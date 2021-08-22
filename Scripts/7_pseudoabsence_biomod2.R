@@ -17,6 +17,7 @@
 library(biomod2)
 library(raster)
 library(dplyr)
+library(beepr)
 
 #setwd("./mydirectory")
 
@@ -34,6 +35,8 @@ for (a in 1:length(sp_names)){
 sp <- read.table("./data/03_clean_df_thin_1.csv",header=TRUE, sep=",") %>%
   filter(species == paste0(sp_names[a])) %>%
   select(species, lon, lat)
+
+message("starting the analysis for ", paste0(sp_names[a]))
 
 #nsp <- unique(sp$species)
 #species <- "Acestrorhynchus_britskii"
@@ -178,6 +181,7 @@ write.csv(pres_pseudo_table2,paste0("./outputs/", sp_names[a],"/pres_pseudoabs2.
 
 }
 
+beep(5)
 
 ############# Retirar
 # Check pseudo abs points to see if they fall inside area

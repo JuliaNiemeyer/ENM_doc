@@ -6,6 +6,7 @@
 
 
 # First install packages
+#install.packages("beepr")
 # Then run the library required
 
 library(maps)
@@ -14,6 +15,7 @@ library(rgdal)
 library(raster)
 library(rgeos)
 library(dplyr)
+library(beepr)
 
 
 # Some examples of projections --------------------------------------------
@@ -45,6 +47,7 @@ pres_files <- list.files("./Maps/Present/30s", full.names = T, 'tif$|bil$')
 head(pres_files)
 
 envi <- stack(pres_files)
+names(envi) <- c('bio_15', 'bio_18', 'bio_4', 'bio_5') ##standardize names of the variables as in your model
 # All America
 envi.cut <- crop(envi, c(-160, -28, -60, 90))
 plot(envi.cut[[1]])
@@ -55,6 +58,7 @@ fut_files <- list.files("./Maps/Future/rcp45", full.names = T, 'tif$|bil$')
 head(fut_files)
 
 envi_fut <- stack(fut_files)
+names(envi_fut) <- c('bio_15', 'bio_18', 'bio_4', 'bio_5') ##standardize names of the variables as in your model
 envi_fut_cut <- crop(envi_fut, c(-160, -28, -60, 90))
 #fut_envi_res <- resample(envi_fut, envi.cut, method='bilinear')
 #plot(envi_fut_cut[[1]])
@@ -65,6 +69,8 @@ fut_files2 <- list.files("./Maps/Future/rcp85", full.names = T, 'tif$|bil$')
 head(fut_files2)
 
 envi_fut2 <- stack(fut_files2)
+names(envi_fut2) <- c('bio_15', 'bio_18', 'bio_4', 'bio_5') ##standardize names of the variables as in your model
+
 envi_fut_cut2 <- crop(envi_fut2, c(-160, -28, -60, 90))
 
 #length(sp_names) <- 6
@@ -186,14 +192,16 @@ dir.create(paste0("./outputs/", sp_names[a], "/Pres_env_crop/"))
  #           "./outputs/SPECIES/Pres_env_crop/env_crop", ##SPECIES deve ser o nome da especie
   #          format = "GTiff",
    #         overwrite = T)
-
+names(present_ly2) <- c(bio_1, bio_2, bio_3, bio_4)
 writeRaster(present_ly2, filename=paste0("./outputs/", sp_names[a], "/Pres_env_crop/", names(present_ly2)), bylayer=TRUE, format="GTiff")
 
 dir.create(paste0("./outputs/",sp_names[a], "/Fut_env_crop/"))
-dir.create(paste0("./outputs/",sp_names[a], "/Fut_env_crop/rcp45"))
-writeRaster(future_ly2, filename=paste0("./outputs/", sp_names[a], "/Fut_env_crop/rcp45", names(future_ly2)), bylayer=TRUE, format="GTiff")
-dir.create(paste0("./outputs/",sp_names[a], "/Fut_env_crop/rcp85"))
-writeRaster(future_ly4, filename=paste0("./outputs/", sp_names[a], "/Fut_env_crop/rcp85", names(future_ly2)), bylayer=TRUE, format="GTiff")
+dir.create(paste0("./outputs/",sp_names[a], "/Fut_env_crop/rcp45/"))
+#names(future_ly2) <- c(bio_1, bio_2, bio_3, bio_4) ##name the rasters as in your model
+writeRaster(future_ly2, filename=paste0("./outputs/", sp_names[a], "/Fut_env_crop/rcp45/", names(future_ly2)), bylayer=TRUE, format="GTiff")
+dir.create(paste0("./outputs/",sp_names[a], "/Fut_env_crop/rcp85/"))
+#names(future_ly4) <- c(bio_1, bio_2, bio_3, bio_4) ##name the rasters as in your model
+writeRaster(future_ly4, filename=paste0("./outputs/", sp_names[a], "/Fut_env_crop/rcp85/", names(future_ly4)), bylayer=TRUE, format="GTiff")
 
 }
 rm(future_ly)
@@ -202,3 +210,5 @@ rm(future_ly3)
 rm(future_ly4)
 rm(present_ly)
 rm(present_ly2)
+
+beep(5) ##R will play a tune when this analysis is done
