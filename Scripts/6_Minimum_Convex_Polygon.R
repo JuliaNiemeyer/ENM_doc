@@ -192,7 +192,7 @@ dir.create(paste0("./outputs/", sp_names[a], "/Pres_env_crop/"))
  #           "./outputs/SPECIES/Pres_env_crop/env_crop", ##SPECIES deve ser o nome da especie
   #          format = "GTiff",
    #         overwrite = T)
-names(present_ly2) <- c(bio_1, bio_2, bio_3, bio_4)
+#names(present_ly2) <- c('bio_15', 'bio_18', 'bio_4', 'bio_5')
 writeRaster(present_ly2, filename=paste0("./outputs/", sp_names[a], "/Pres_env_crop/", names(present_ly2)), bylayer=TRUE, format="GTiff")
 
 dir.create(paste0("./outputs/",sp_names[a], "/Fut_env_crop/"))

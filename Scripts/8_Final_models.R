@@ -2,14 +2,14 @@
 
 # Script created by
 # Bruno M. Carvalho (https://github.com/brunomc-eco)
+#  & Luara Tourinho (https://github.com/luaratourinho)
 
 # Edited by
-# Julia Niemeyer & Luara Tourinho (https://github.com/luaratourinho)
-# and others
-
+# Julia Niemeyer
 # Date: 08 august 2021
 
 
+##Running ENM for multiple species & RCP 4.5 and 8.5
 # Required packages
 library(parallel)
 library(foreach)
@@ -19,7 +19,6 @@ library(rgeos)
 library(rgdal)
 library(dismo)
 library(rJava)
-
 library(kernlab)
 library(randomForest)
 library(maptools)
@@ -47,9 +46,12 @@ indexOf <- function(v,findFor) {
 
 
 # Settings ----------------------------------------------------------------
+#########           ACTION NEEDED        ##########
 
 # for GLM, RandomForest and SVM
+##Set your model to the biovariables you selected. It should be exactly like the names of the environmental rasters.
 model <- pa ~bio_4+bio_5+bio_15+bio_18
+
 # partitions (4 = 75% train e 25% test; 5 = 80% train e 20% test; 10 = 90% train e 10% test)
 k = 10
 # number of background
@@ -63,17 +65,18 @@ cont.maps = T # save continuous maps by algorithm
 bin.maps = T # save binary maps by algorithm
 ens.maps = T # save ensemble maps by algorithm
 
-
-# Name of .csv file with species occurrences, columns: 'species', 'lon', 'lat'
-##Botar o caminho inteiro pra Ler a planilha do zero
+#### Name of .csv file with species occurrences, columns: 'species', 'lon', 'lat'
+## Entrar com a planilha limpa pós spthin
 file = "./data/03_clean_df_thin_1.csv"
 
 
+########## END OF ACTION  NEEDED ############
+
 # Reading files -----------------------------------------------------------
-## Entrar com a planilha limpa pós spthin
-sp <- read.table("./data/03_clean_df_thin_1.csv",header=TRUE, sep=",")
+sp <- read.table(file, header=TRUE, sep=",")
 sp_names <- unique(sp$species)
 
+##to test for few species use the following line
 #length(sp_names) <- 6
 
 for (a in 1:length(sp_names)) {
@@ -97,7 +100,7 @@ predictors <- stack(raster_files)
 # Read your future environmental rasters selected by correlation
 #raster_files2 <- list.files('./Maps/Future/rcp45', full.names = T, 'tif$|bil$')
 
-## ERP45
+## RCP45
 raster_files2 <- list.files(paste0("./outputs/", sp.n, "/Fut_env_crop/rcp45"), full.names = T, 'tif$|bil$')
 head(raster_files2)
 
@@ -143,7 +146,7 @@ target_dir = paste(paste0("./outputs/", sp.n, "/results/", sep=""))
 dir.create( target_dir )
 
 if(file.exists(paste(target_dir, '/STARTED.txt', sep="")))
-  stop("You MUST DELETE results folder before continue")
+  stop("You MUST DELETE previous results folder before continue")
 
 write(format( started_time, "%a %b %d %X %Y"), file=paste(target_dir, 'STARTED.txt', sep=""))
 
@@ -434,7 +437,7 @@ cur.bc.bin <- list()
 future_variable.bc <- list()
 future_variable.bc.bin <- list()
 future_variable2.bc <- list()
-future_variable.bc2.bin <- list()
+future_variable2.bc.bin <- list()
 
 for(i in 1:k){
   cat( format( Sys.time(), "%a %b %d %X %Y"), '-', 'Projecting Bioclim (', i, ') model of', sp.n, '...', '\n')
@@ -892,7 +895,8 @@ cur.sv <- list()
 cur.sv.bin <- list()
 future_variable.sv <- list()
 future_variable.sv.bin <- list()
-
+future_variable2.sv <- list()
+future_variable2.sv.bin <- list()
 
 for(i in 1:k){
   cat( format( Sys.time(), "%a %b %d %X %Y"), '-', 'Projecting SVM (', i, ') models of', sp.n, '...', '\n')
@@ -1072,9 +1076,9 @@ stacks <- c(st1, st2, st3, st4, st5) ## ignora o que for null
 st <- stack(stacks)
 
 w.sem.os.nulos <- w[w >= tss.lim]
-ens2.cur <- weighted.mean(st, w.sem.os.nulos) ##ensamble present continue --resultado final
-ens2.cur.sd.w <- sum(w.sem.os.nulos * (st - ens2.cur)^2) ## variancia
-ens2.cur.sd.w <- sqrt(ens2.cur.sd.w) ##desvio padrão (incerteza) -- pra caso revisor peça
+ens.cur <- weighted.mean(st, w.sem.os.nulos) ##ensamble present continue --resultado final
+ens.cur.sd.w <- sum(w.sem.os.nulos * (st - ens.cur)^2) ## variancia
+ens.cur.sd.w <- sqrt(ens.cur.sd.w) ##desvio padrão (incerteza) -- pra caso revisor peça
 
 
 # Uncertainty for each algo (each partition) -------------------------------------------------------------
@@ -1142,15 +1146,6 @@ cur.sv.sd.w <- sqrt(cur.sv.sd.w)
 # binarios
 algo.future_variable <- c(future_variable.bc.ens.bin, future_variable.gm.ens.bin, future_variable.rf.ens.bin, future_variable.mx.ens.bin, future_variable.sv.ens.bin)
 algo.future_variable <- algo.future_variable[lapply(algo.future_variable, length) > 0] ##ignores NULL rasters but not NA
-#algo.future_variable2 <- list()
-
-## Ignores rasters that are all NA
-#for (i in 1:length(algo.future_variable)){
- #if (!is.na(minValue(algo.future_variable[[i]]))){
-  # print('it is not NA')
-  # algo.future_variable2[[i]] <- algo.future_variable[[i]]
-   #}
-#}
 
 ens.future_variable <- Reduce('+', algo.future_variable)
 tval <- unique(ens.future_variable)
@@ -1433,23 +1428,23 @@ tval <- tval[tval != 0]
 tval <- median(tval)
 ens.fut.bin2 <- ens.fut2 >= tval
 
-###PRECISA MUDAR O NOME DAS VRIAVEIS
+###SAVING
 cat( format( Sys.time(), "%a %b %d %X %Y"), '-', 'Saving ensemble maps of', sp.n, '...', '\n')
-if(!is.null(ens2.cur)){
-writeRaster(ens2.cur, file = paste(target_dir, '/CUR.cont_', sp.n, '.asc', sep=""),overwrite=TRUE)
+if(!is.null(ens.cur)){
+writeRaster(ens.cur, file = paste(target_dir, '/CUR.cont_', sp.n, '.asc', sep=""),overwrite=TRUE)
 writeRaster(ens2.future_variable, file = paste(target_dir, '/Fut.HGemES.rcp_45.cont_', sp.n, '.asc', sep=""),overwrite=TRUE)
 writeRaster(ens2.future_variable2, file = paste(target_dir, '/Fut.HGemES.rcp_85.cont_', sp.n, '.asc', sep=""),overwrite=TRUE)
 
 }
 if(!is.null(ens.cur.bin)){
 writeRaster(ens.cur.bin, file = paste(target_dir, '/CUR.bin_', sp.n, '.asc', sep=""),overwrite=TRUE)
-writeRaster(ens.future_variable.bin, file = paste(target_dir, '/Fut.HGemES.rcp_45.bin_', sp.n, '.asc', sep=""),overwrite=TRUE)
-writeRaster(ens.future_variable2.bin, file = paste(target_dir, '/Fut.HGemES.rcp_85.bin_', sp.n, '.asc', sep=""),overwrite=TRUE)
+writeRaster(ens2.future_variable.bin, file = paste(target_dir, '/Fut.HGemES.rcp_45.bin_', sp.n, '.asc', sep=""),overwrite=TRUE)
+writeRaster(ens2.future_variable2.bin, file = paste(target_dir, '/Fut.HGemES.rcp_85.bin_', sp.n, '.asc', sep=""),overwrite=TRUE)
 
 }
 #weighted.mean and weighted.sd
-if(!is.null(ens2.cur.sd.w)){
-writeRaster(ens2.cur.sd.w, file = paste(target_dir, '/ens.cur.sd.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
+if(!is.null(ens.cur.sd.w)){
+writeRaster(ens.cur.sd.w, file = paste(target_dir, '/ens.cur.sd.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
 writeRaster(ens2.fut.sd.w, file = paste(target_dir, '/ens.Fut.HGemES.rcp_45.sd.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
 writeRaster(ens2.fut.sd.w2, file = paste(target_dir, '/ens.Fut.HGemES.rcp_85.sd.w_', sp.n, '.asc', sep=""),overwrite=TRUE)
 }
