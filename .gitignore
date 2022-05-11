@@ -3,6 +3,7 @@
 .RData
 .Ruserdata
 *.tif
+*.shp
 *.pdf
 *.docs
 *.docx
